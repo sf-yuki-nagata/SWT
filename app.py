@@ -5,11 +5,11 @@ import pandas as pd
 # ------------------------------------------------
 # 初期設定とステート管理
 # ------------------------------------------------
-st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️")
 
 # セッション状態の初期化
 if "phase" not in st.session_state:
-    st.session_state.phase = "login" # login, quiz, result の3フェーズ
+    st.session_state.phase = "login" # login, quiz, result
 if "username" not in st.session_state:
     st.session_state.username = ""
 if "start_time" not in st.session_state:
@@ -18,10 +18,11 @@ if "elapsed_time" not in st.session_state:
     st.session_state.elapsed_time = 0
 if "current_q" not in st.session_state:
     st.session_state.current_q = 1
-if "retry" not in st.session_state:
-    st.session_state.retry = False
 if "rankings" not in st.session_state:
     st.session_state.rankings = []
+# 【新機能】間違えた選択肢を記録するリスト
+if "wrong_choices" not in st.session_state:
+    st.session_state.wrong_choices = []
 
 # クイズデータ（5問・4択）
 QUIZ_DATA = [
@@ -58,132 +59,146 @@ QUIZ_DATA = [
 ]
 
 # ------------------------------------------------
-# ページ1: ログイン画面（TOP）
+# ページ1: クイズ画面（ログイン・クイズ・結果を内包）
 # ------------------------------------------------
-def page_login():
-    st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ クイズチャレンジ</h1>", unsafe_allow_html=True)
-    st.write("")
-    st.write("")
-    
-    # フォームを中央に配置するためのカラム構成
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("<h4 style='text-align: center;'>プレイヤー名を入力してください</h4>", unsafe_allow_html=True)
-        username = st.text_input("ユーザー名", label_visibility="collapsed", placeholder="例：スノウ太郎")
+def page_main_quiz():
+    # --- ログインフェーズ ---
+    if st.session_state.phase == "login":
+        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ クイズチャレンジ</h1>", unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("<h4 style='text-align: center;'>プレイヤー名を入力してください</h4>", unsafe_allow_html=True)
+            username = st.text_input("ユーザー名", label_visibility="collapsed", placeholder="例：スノウ太郎")
+            
+            st.write("")
+            start_btn = st.button("🚀 クイズスタート！", type="primary", use_container_width=True, disabled=not username)
+            
+            if start_btn:
+                st.session_state.username = username
+                st.session_state.start_time = time.time()
+                st.session_state.phase = "quiz"
+                st.session_state.current_q = 1
+                st.session_state.wrong_choices = [] # 履歴リセット
+                st.rerun()
+
+    # --- クイズ実行フェーズ ---
+    elif st.session_state.phase == "quiz":
+        q_idx = st.session_state.current_q - 1
+        q_data = QUIZ_DATA[q_idx]
+
+        st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
+        
+        # 【新機能】間違えた回数に応じて再挑戦メッセージを変化させる
+        mistake_count = len(st.session_state.wrong_choices)
+        if mistake_count > 0:
+            st.markdown("<h4 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h4>", unsafe_allow_html=True)
+            if mistake_count == 1:
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>惜しい！もう一度よく考えてみよう！</p>", unsafe_allow_html=True)
+            elif mistake_count == 2:
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>あと少し！選択肢が絞られてきたぞ！</p>", unsafe_allow_html=True)
+            elif mistake_count >= 3:
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
+            
+        st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
+        st.divider()
+
+        with st.expander("💡 ヒントを見る"):
+            st.write(q_data["hint"])
+
+        st.write("")
+
+        # 【新機能】間違えた選択肢を除外して表示
+        available_opts = [opt for opt in q_data["opts"] if opt not in st.session_state.wrong_choices]
+        
+        user_choice = st.radio(
+            "回答を選択してください", 
+            available_opts, 
+            index=None, 
+            label_visibility="collapsed"
+        )
+
+        st.write("")
+        
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("解答する", type="primary", use_container_width=True, disabled=not user_choice):
+                if user_choice == q_data["ans"]:
+                    # 正解：次の問題へ進む準備
+                    st.session_state.wrong_choices = [] # 不正解履歴をクリア
+                    if st.session_state.current_q < 5:
+                        st.session_state.current_q += 1
+                    else:
+                        st.session_state.elapsed_time = time.time() - st.session_state.start_time
+                        st.session_state.rankings.append({
+                            "プレイヤー名": st.session_state.username,
+                            "クリアタイム": round(st.session_state.elapsed_time, 2)
+                        })
+                        st.session_state.phase = "result"
+                else:
+                    # 不正解：間違えた選択肢をリストに追加して再描画
+                    st.session_state.wrong_choices.append(user_choice)
+                
+                st.rerun()
+
+        st.write("")
+        st.write("")
+        st.divider()
+        
+        progress_val = st.session_state.current_q / 5
+        st.progress(progress_val)
+        
+        messages = {
+            1: "さあ、始まりました！どんどん答えていこう！",
+            2: "いいペースです！その調子！",
+            3: "折り返し地点！落ち着いていこう！",
+            4: "あと1問！",
+            5: "泣いても笑っても最後の問題！"
+        }
+        st.markdown(f"<p style='text-align: center; color: gray;'>({st.session_state.current_q}/5) {messages[st.session_state.current_q]}</p>", unsafe_allow_html=True)
+
+    # --- 結果発表フェーズ ---
+    elif st.session_state.phase == "result":
+        st.balloons()
+        st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center;'>{st.session_state.username}さん、参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
+        
+        st.markdown(f"<h3 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h3>", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        st.markdown("<h4 style='text-align: center;'>もっとコミュニティを楽しもう！</h4>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.link_button("❄️ snowvillage はこちら！", "https://snowvillage.cloud/", use_container_width=True)
         
         st.write("")
-        # 名前が入力されていないとボタンを押せないように制御
-        start_btn = st.button("🚀 クイズスタート！", type="primary", use_container_width=True, disabled=not username)
+        st.write("")
         
-        if start_btn:
-            st.session_state.username = username
-            st.session_state.start_time = time.time()
-            st.session_state.phase = "quiz"
-            st.session_state.current_q = 1
+        # もう一度遊ぶボタン
+        if st.button("もう一度挑戦する（別名でプレイ）", icon="🔄"):
+            st.session_state.phase = "login"
+            st.session_state.username = ""
+            st.session_state.wrong_choices = []
             st.rerun()
 
 # ------------------------------------------------
-# ページ2: クイズ画面（1〜5問目共通）
+# ページ2: いつでも見れるランキング画面
 # ------------------------------------------------
-def page_quiz():
-    q_idx = st.session_state.current_q - 1
-    q_data = QUIZ_DATA[q_idx]
+def page_ranking():
+    st.title("🏆 リーダーボード")
+    st.write("現在のタイムアタックランキングです！")
+    
+    # プレイ中にランキングを見た場合のアナウンス
+    if st.session_state.phase == "quiz":
+        st.info("💡 現在クイズに挑戦中です！左のメニューから「クイズ」に戻ると、続きから再開できます。")
+    
+    if not st.session_state.rankings:
+        st.write("まだ参加者がいません。あなたが最初のチャレンジャーになりましょう！")
+        return
 
-    # ヘッダーと設問（中央揃え）
-    st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
-    
-    # 間違えた場合の「再挑戦」メッセージ
-    if st.session_state.retry:
-        st.markdown("<h4 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h4>", unsafe_allow_html=True)
-        
-    st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
-    st.divider()
-
-    # ヒント（エクスパンダー）
-    with st.expander("💡 ヒントを見る"):
-        st.write(q_data["hint"])
-
-    st.write("")
-
-    # 4択の回答（ラジオボタン、デフォルト選択なし）
-    user_choice = st.radio(
-        "回答を選択してください", 
-        q_data["opts"], 
-        index=None, 
-        label_visibility="collapsed"
-    )
-
-    st.write("")
-    
-    # 回答ボタン（選択されていないと押せない）
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("解答する", type="primary", use_container_width=True, disabled=not user_choice):
-            if user_choice == q_data["ans"]:
-                # 正解の場合
-                st.session_state.retry = False
-                if st.session_state.current_q < 5:
-                    st.session_state.current_q += 1
-                else:
-                    # 5問目正解でクリア処理
-                    st.session_state.elapsed_time = time.time() - st.session_state.start_time
-                    # ランキングに登録
-                    st.session_state.rankings.append({
-                        "プレイヤー名": st.session_state.username,
-                        "クリアタイム": round(st.session_state.elapsed_time, 2)
-                    })
-                    st.session_state.phase = "result"
-            else:
-                # 不正解の場合
-                st.session_state.retry = True
-            
-            st.rerun()
-
-    # 画面下部のステータスバーと応援メッセージ
-    st.write("")
-    st.write("")
-    st.divider()
-    
-    # 進行度バー
-    progress_val = st.session_state.current_q / 5
-    st.progress(progress_val)
-    
-    # メッセージの設定
-    messages = {
-        1: "さあ、始まりました！どんどん答えていこう！",
-        2: "いいペースです！その調子！",
-        3: "折り返し地点！落ち着いていこう！",
-        4: "あと1問！",
-        5: "泣いても笑っても最後の問題！"
-    }
-    st.markdown(f"<p style='text-align: center; color: gray;'>({st.session_state.current_q}/5) {messages[st.session_state.current_q]}</p>", unsafe_allow_html=True)
-
-# ------------------------------------------------
-# ページ3: 結果・ランキング画面
-# ------------------------------------------------
-def page_result():
-    st.balloons()
-    st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
-    st.markdown(f"<h4 style='text-align: center;'>{st.session_state.username}さん、参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
-    
-    # タイムの表示
-    st.markdown(f"<h3 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h3>", unsafe_allow_html=True)
-    
-    st.divider()
-    
-    # コミュニティへの誘導
-    st.markdown("<h4 style='text-align: center;'>もっとコミュニティを楽しもう！</h4>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # リンクボタン
-        st.link_button("❄️ snowvillage はこちら！", "https://snowvillage.cloud/", use_container_width=True)
-    
-    st.divider()
-
-    # ランキングの表示
-    st.subheader("🏆 リーダーボード（タイムアタック）")
-    
-    # タイムが短い順にソート
     sorted_ranking = sorted(st.session_state.rankings, key=lambda x: x["クリアタイム"])
     df = pd.DataFrame(sorted_ranking)
     df.index = [f"{i+1}位" for i in range(len(df))]
@@ -192,29 +207,21 @@ def page_result():
         df, 
         use_container_width=True,
         column_config={
+            "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
             "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
         }
     )
-    
-    st.write("")
-    if st.button("もう一度挑戦する（別名でプレイ）", icon="🔄"):
-        st.session_state.phase = "login"
-        st.session_state.username = ""
-        st.session_state.retry = False
-        st.rerun()
 
 # ------------------------------------------------
-# ナビゲーション制御
+# ナビゲーションの構築（常時表示）
 # ------------------------------------------------
-# 状態に応じて表示するページを動的に定義する
-if st.session_state.phase == "login":
-    pages = {"ログイン": [st.Page(page_login, title="スタート画面", icon="🏠")]}
-elif st.session_state.phase == "quiz":
-    pages = {"クイズ": [st.Page(page_quiz, title="クイズ挑戦中...", icon="🎮")]}
-else:
-    pages = {"結果": [st.Page(page_result, title="結果発表・ランキング", icon="🏆")]}
+quiz_page = st.Page(page_main_quiz, title="クイズ", icon="🎮", default=True)
+ranking_page = st.Page(page_ranking, title="ランキング", icon="🏆")
 
-# メニューを生成して実行
-# position="hidden" にすることで、サイドバーを隠して完全にアプリ風の画面遷移にしています
-pg = st.navigation(pages, position="hidden")
+# 辞書型で渡すことでサイドバーに美しいメニューを構築
+pg = st.navigation(
+    {
+        "メインメニュー": [quiz_page, ranking_page]
+    }
+)
 pg.run()
