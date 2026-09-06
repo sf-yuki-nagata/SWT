@@ -63,7 +63,7 @@ QUIZ_DATA = [
 def page_main_quiz():
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ クイズチャレンジ</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ Streamlitでクイズチャレンジ</h1>", unsafe_allow_html=True)
         st.write("")
         st.write("")
         
