@@ -1,15 +1,23 @@
 import streamlit as st
 import time
 import pandas as pd
+import base64
+import os
+
+# --- 画像をHTMLで表示するためのBase64エンコード関数 ---
+def get_image_base64(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
 
 # ------------------------------------------------
 # 初期設定とステート管理
 # ------------------------------------------------
 st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️")
 
-# セッション状態の初期化
 if "phase" not in st.session_state:
-    st.session_state.phase = "login" # login, quiz, result
+    st.session_state.phase = "login"
 if "username" not in st.session_state:
     st.session_state.username = ""
 if "start_time" not in st.session_state:
@@ -23,7 +31,6 @@ if "rankings" not in st.session_state:
 if "wrong_choices" not in st.session_state:
     st.session_state.wrong_choices = []
 
-# 【更新】新しいクイズデータ（5問・4択）
 QUIZ_DATA = [
     {
         "q": "チームメンバーとSnowflake上でシームレスにデータ分析やAI開発の共同作業を行うための環境・機能の名称は何ですか？",
@@ -35,7 +42,7 @@ QUIZ_DATA = [
         "q": "AIアプリケーションやデータ処理において、リソースやコストの最適化・効率的な運用管理を支援する機能・サービスの名称はどれですか？",
         "opts": ["Snowflake FinOps", "Snowflake Optimizer", "Snowflake CoCo", "Snowflake CostManager"],
         "ans": "Snowflake CoCo",
-        "hint": "「Cortex Code」の頭文字をとってこう呼ばれています！"
+        "hint": "頭文字をとって「CoCo」と呼ばれています！"
     },
     {
         "q": "セキュリティとガバナンス基盤である「Snowflake Horizon」において、AIモデルにデータの構造や意味（文脈）を理解させるための機能はどれですか？",
@@ -63,7 +70,8 @@ QUIZ_DATA = [
 def page_main_quiz():
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ Streamlitでクイズチャレンジ</h1>", unsafe_allow_html=True)
+        # 【修正1】タイトルを行分け
+        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h1>", unsafe_allow_html=True)
         st.write("")
         st.write("")
         
@@ -80,7 +88,7 @@ def page_main_quiz():
                 st.session_state.start_time = time.time()
                 st.session_state.phase = "quiz"
                 st.session_state.current_q = 1
-                st.session_state.wrong_choices = [] # 履歴リセット
+                st.session_state.wrong_choices = [] 
                 st.rerun()
 
     # --- クイズ実行フェーズ ---
@@ -90,7 +98,6 @@ def page_main_quiz():
 
         st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
         
-        # 間違えた回数に応じて再挑戦メッセージを変化させる
         mistake_count = len(st.session_state.wrong_choices)
         if mistake_count > 0:
             st.markdown("<h4 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h4>", unsafe_allow_html=True)
@@ -109,7 +116,6 @@ def page_main_quiz():
 
         st.write("")
 
-        # 間違えた選択肢を除外して表示
         available_opts = [opt for opt in q_data["opts"] if opt not in st.session_state.wrong_choices]
         
         user_choice = st.radio(
@@ -125,8 +131,7 @@ def page_main_quiz():
         with col2:
             if st.button("解答する", type="primary", use_container_width=True, disabled=not user_choice):
                 if user_choice == q_data["ans"]:
-                    # 正解：次の問題へ進む準備
-                    st.session_state.wrong_choices = [] # 不正解履歴をクリア
+                    st.session_state.wrong_choices = [] 
                     if st.session_state.current_q < 5:
                         st.session_state.current_q += 1
                     else:
@@ -137,7 +142,6 @@ def page_main_quiz():
                         })
                         st.session_state.phase = "result"
                 else:
-                    # 不正解：間違えた選択肢をリストに追加して再描画
                     st.session_state.wrong_choices.append(user_choice)
                 
                 st.rerun()
@@ -162,26 +166,44 @@ def page_main_quiz():
     elif st.session_state.phase == "result":
         st.balloons()
         st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
-        st.markdown(f"<h4 style='text-align: center;'>{st.session_state.username}さん、参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
+        
+        # 【修正2】「ユーザー名」で改行、「参加…ます！」を1行に
+        st.markdown(f"<h4 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
         
         st.markdown(f"<h3 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h3>", unsafe_allow_html=True)
         
         st.divider()
         
-        st.markdown("<h4 style='text-align: center;'>もっとコミュニティを楽しもう！</h4>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
+        # 【修正3】「もっとコミュニティを楽しもう！」を1行に収まるサイズに調整
+        st.markdown("<p style='text-align: center; font-size: 1.1rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
+        
+        # 【修正4】snowvillageの画像をリンク化
+        img_base64 = get_image_base64("image_f9229b.png")
+        if img_base64:
+            # 画像が存在する場合はクリッカブルな画像を表示
+            html_img_link = f"""
+            <div style="display: flex; justify-content: center;">
+                <a href="https://snowvillage.cloud/" target="_blank">
+                    <img src="data:image/png;base64,{img_base64}" style="width: 150px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                </a>
+            </div>
+            """
+            st.markdown(html_img_link, unsafe_allow_html=True)
+        else:
+            # 画像が見つからない場合のフォールバック（デバッグ用）
+            st.warning("⚠️ `image_f9229b.png` が見つかりません。app.pyと同じフォルダに配置してください。")
             st.link_button("❄️ snowvillage はこちら！", "https://snowvillage.cloud/", use_container_width=True)
         
         st.write("")
         st.write("")
         
-        # もう一度遊ぶボタン
-        if st.button("もう一度挑戦する（別名でプレイ）", icon="🔄"):
-            st.session_state.phase = "login"
-            st.session_state.username = ""
-            st.session_state.wrong_choices = []
-            st.rerun()
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("もう一度挑戦する（別名でプレイ）", icon="🔄", use_container_width=True):
+                st.session_state.phase = "login"
+                st.session_state.username = ""
+                st.session_state.wrong_choices = []
+                st.rerun()
 
 # ------------------------------------------------
 # ページ2: いつでも見れるランキング画面
