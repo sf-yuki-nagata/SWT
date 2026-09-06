@@ -35,7 +35,7 @@ QUIZ_DATA = [
         "q": "AIアプリケーションやデータ処理において、リソースやコストの最適化・効率的な運用管理を支援する機能・サービスの名称はどれですか？",
         "opts": ["Snowflake FinOps", "Snowflake Optimizer", "Snowflake CoCo", "Snowflake CostManager"],
         "ans": "Snowflake CoCo",
-        "hint": "頭文字をとって「CoCo」と呼ばれています！"
+        "hint": "「Cortex Code」の頭文字をとってこう呼ばれています！"
     },
     {
         "q": "セキュリティとガバナンス基盤である「Snowflake Horizon」において、AIモデルにデータの構造や意味（文脈）を理解させるための機能はどれですか？",
