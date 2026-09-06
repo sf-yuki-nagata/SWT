@@ -20,35 +20,34 @@ if "current_q" not in st.session_state:
     st.session_state.current_q = 1
 if "rankings" not in st.session_state:
     st.session_state.rankings = []
-# 【新機能】間違えた選択肢を記録するリスト
 if "wrong_choices" not in st.session_state:
     st.session_state.wrong_choices = []
 
-# クイズデータ（5問・4択）
+# 【更新】新しいクイズデータ（5問・4択）
 QUIZ_DATA = [
     {
-        "q": "Snowflakeはどのクラウドプロバイダー上で実行できますか？",
-        "opts": ["AWSのみ", "AWS, GCP", "AWS, Azure, GCP", "オンプレミスのみ"],
-        "ans": "AWS, Azure, GCP",
-        "hint": "Snowflakeはマルチクラウドに対応しているのが強みです！"
+        "q": "チームメンバーとSnowflake上でシームレスにデータ分析やAI開発の共同作業を行うための環境・機能の名称は何ですか？",
+        "opts": ["Snowflake TeamWork", "Snowflake CoWork", "Snowflake Collab", "Snowflake SharedSpace"],
+        "ans": "Snowflake CoWork",
+        "hint": "「共に働く（Co-Work）」がキーワードの機能です！"
     },
     {
-        "q": "Snowflakeのアーキテクチャの最大の特徴は何を分離していること？",
-        "opts": ["ユーザーとパスワード", "コンピュートとストレージ", "ネットワークとセキュリティ", "テーブルとビュー"],
-        "ans": "コンピュートとストレージ",
-        "hint": "処理能力とデータ保存場所を別々にスケーリングできます。"
+        "q": "AIアプリケーションやデータ処理において、リソースやコストの最適化・効率的な運用管理を支援する機能・サービスの名称はどれですか？",
+        "opts": ["Snowflake FinOps", "Snowflake Optimizer", "Snowflake CoCo", "Snowflake CostManager"],
+        "ans": "Snowflake CoCo",
+        "hint": "頭文字をとって「CoCo」と呼ばれています！"
     },
     {
-        "q": "Snowflakeの仮想ウェアハウスのサイズ変更はいつ行えますか？",
-        "opts": ["サーバー再起動時のみ", "月に1回だけ", "無停止でいつでも", "データロード前のみ"],
-        "ans": "無停止でいつでも",
-        "hint": "ダウンタイムなしで瞬時にスケールアップ・ダウンが可能です。"
+        "q": "セキュリティとガバナンス基盤である「Snowflake Horizon」において、AIモデルにデータの構造や意味（文脈）を理解させるための機能はどれですか？",
+        "opts": ["Horizon Semantic", "Horizon Context", "Horizon Graph", "Horizon Meaning"],
+        "ans": "Horizon Context",
+        "hint": "AIがデータの「文脈（Context）」を深く理解するために重要な機能です。"
     },
     {
-        "q": "Snowflakeでデータを共有する際、データをコピーする必要はありますか？",
-        "opts": ["常に必要", "外部クラウドへの共有時のみ必要", "不要（同じデータを参照）", "週に1回同期が必要"],
-        "ans": "不要（同じデータを参照）",
-        "hint": "「データシェアリング」という機能を使うと、コピーなしで安全に共有できます。"
+        "q": "生成AIモデルとSnowflake内のエンタープライズデータを、安全かつ標準化されたプロトコルで接続するためのコネクタの名称は何ですか？",
+        "opts": ["AI-Data APIコネクタ", "Snowflake LLM Bridge", "Secure Model Link", "MCP（Model Context Protocol）コネクタ"],
+        "ans": "MCP（Model Context Protocol）コネクタ",
+        "hint": "Anthropic社などが提唱している標準プロトコル（MCP）に対応したコネクタです！"
     },
     {
         "q": "Snowflakeの日本コミュニティの名称は？",
@@ -91,7 +90,7 @@ def page_main_quiz():
 
         st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
         
-        # 【新機能】間違えた回数に応じて再挑戦メッセージを変化させる
+        # 間違えた回数に応じて再挑戦メッセージを変化させる
         mistake_count = len(st.session_state.wrong_choices)
         if mistake_count > 0:
             st.markdown("<h4 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h4>", unsafe_allow_html=True)
@@ -110,7 +109,7 @@ def page_main_quiz():
 
         st.write("")
 
-        # 【新機能】間違えた選択肢を除外して表示
+        # 間違えた選択肢を除外して表示
         available_opts = [opt for opt in q_data["opts"] if opt not in st.session_state.wrong_choices]
         
         user_choice = st.radio(
@@ -191,7 +190,6 @@ def page_ranking():
     st.title("🏆 リーダーボード")
     st.write("現在のタイムアタックランキングです！")
     
-    # プレイ中にランキングを見た場合のアナウンス
     if st.session_state.phase == "quiz":
         st.info("💡 現在クイズに挑戦中です！左のメニューから「クイズ」に戻ると、続きから再開できます。")
     
@@ -218,7 +216,6 @@ def page_ranking():
 quiz_page = st.Page(page_main_quiz, title="クイズ", icon="🎮", default=True)
 ranking_page = st.Page(page_ranking, title="ランキング", icon="🏆")
 
-# 辞書型で渡すことでサイドバーに美しいメニューを構築
 pg = st.navigation(
     {
         "メインメニュー": [quiz_page, ranking_page]
