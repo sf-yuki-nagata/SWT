@@ -4,6 +4,66 @@ import pandas as pd
 import base64
 import os
 
+# --- カスタムデザインを適用するCSS ---
+def inject_custom_css():
+    st.markdown("""
+    <style>
+    /* 1. ラジオボタンをSnowflakeブルーの角丸ボタン化 */
+    .stRadio [role="radiogroup"] {
+        gap: 12px;
+    }
+    .stRadio [role="radiogroup"] label {
+        background-color: #29b5e8 !important; /* Snowflakeブルー */
+        border-radius: 12px !important;       /* 角丸 */
+        padding: 15px !important;
+        border: 3px solid #29b5e8 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .stRadio [role="radiogroup"] label:hover {
+        transform: translateY(-2px); /* ホバー時に少し浮くアニメーション */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    /* デフォルトの丸ポッチ（ドット）を非表示 */
+    .stRadio [role="radiogroup"] label > div:first-child {
+        display: none !important;
+    }
+    /* 文字を黒の太字、中央揃え */
+    .stRadio [role="radiogroup"] label p {
+        color: black !important;
+        font-weight: 900 !important;
+        font-size: 1.1rem !important;
+        text-align: center !important;
+        margin: 0 !important;
+        width: 100%;
+    }
+    /* 選択中のボタンのスタイル（白背景にして枠線を残す） */
+    .stRadio [role="radiogroup"] label:has(input:checked) {
+        background-color: #ffffff !important;
+        border: 3px solid #29b5e8 !important;
+    }
+
+    /* 2. サイドバーの開閉アイコンを「📺🔄」に変更 */
+    /* 閉じているときのボタン */
+    [data-testid="collapsedControl"] svg {
+        display: none !important;
+    }
+    [data-testid="collapsedControl"]::after {
+        content: "📺🔄";
+        font-size: 1.6rem;
+        cursor: pointer;
+    }
+    /* 開いているときのボタン */
+    [data-testid="stSidebarHeader"] button svg {
+        display: none !important;
+    }
+    [data-testid="stSidebarHeader"] button::after {
+        content: "📺🔄";
+        font-size: 1.6rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- 画像をHTMLで表示するためのBase64エンコード関数 ---
 def get_image_base64(image_path):
     if os.path.exists(image_path):
@@ -17,9 +77,9 @@ def get_active_users():
     return {}
 
 # ------------------------------------------------
-# 【新機能】数秒おきに自動更新される部分（フラグメント）
+# リアルタイム更新（フラグメント）
 # ------------------------------------------------
-@st.fragment(run_every=3) # 3秒ごとにこの関数だけ自動再実行
+@st.fragment(run_every=3)
 def show_active_users_fragment(current_q):
     active_users = get_active_users()
     same_q_users = sum(1 for q in active_users.values() if q == current_q)
@@ -29,6 +89,9 @@ def show_active_users_fragment(current_q):
 # 初期設定とステート管理
 # ------------------------------------------------
 st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️")
+
+# --- カスタムCSSの呼び出し ---
+inject_custom_css()
 
 if "phase" not in st.session_state:
     st.session_state.phase = "login"
@@ -139,12 +202,10 @@ def page_main_quiz():
             
         st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
-        # 【変更】3秒おきに自動更新される部分を呼び出し
         show_active_users_fragment(st.session_state.current_q)
         
         st.divider()
 
-        # 【変更】タイトルに問題番号を入れることで、次の問題に進むと自動で閉じるようにする
         with st.expander(f"💡 ヒントを見る (第{st.session_state.current_q}問)"):
             st.write(q_data["hint"])
 
