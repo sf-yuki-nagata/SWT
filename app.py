@@ -49,7 +49,6 @@ def inject_custom_css():
         display: none !important;
     }
     [data-testid="collapsedControl"]::after {
-        content: "📺🔄";
         font-size: 1.6rem;
         cursor: pointer;
     }
@@ -58,7 +57,6 @@ def inject_custom_css():
         display: none !important;
     }
     [data-testid="stSidebarHeader"] button::after {
-        content: "📺🔄";
         font-size: 1.6rem;
     }
     </style>
