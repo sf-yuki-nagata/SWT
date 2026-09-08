@@ -261,7 +261,7 @@ def page_main_quiz():
         if img_base64:
             html_img_link = f"""
             <div style="display: flex; justify-content: center;">
-                <a href="https://snowvillage.cloud/" target="_blank">
+                <a href="https://snowvillage.cloud/contents/" target="_blank">
                     <img src="data:image/png;base64,{img_base64}" style="width: 150px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 </a>
             </div>
