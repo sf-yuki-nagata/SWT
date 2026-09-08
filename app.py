@@ -13,22 +13,20 @@ def inject_custom_css():
         gap: 12px;
     }
     .stRadio [role="radiogroup"] label {
-        background-color: #29b5e8 !important; /* Snowflakeブルー */
-        border-radius: 12px !important;       /* 角丸 */
+        background-color: #29b5e8 !important; 
+        border-radius: 12px !important;       
         padding: 15px !important;
         border: 3px solid #29b5e8 !important;
         cursor: pointer;
         transition: all 0.2s ease;
     }
     .stRadio [role="radiogroup"] label:hover {
-        transform: translateY(-2px); /* ホバー時に少し浮くアニメーション */
+        transform: translateY(-2px); 
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    /* デフォルトの丸ポッチ（ドット）を非表示 */
     .stRadio [role="radiogroup"] label > div:first-child {
         display: none !important;
     }
-    /* 文字を黒の太字、中央揃え */
     .stRadio [role="radiogroup"] label p {
         color: black !important;
         font-weight: 900 !important;
@@ -37,27 +35,9 @@ def inject_custom_css():
         margin: 0 !important;
         width: 100%;
     }
-    /* 選択中のボタンのスタイル（白背景にして枠線を残す） */
     .stRadio [role="radiogroup"] label:has(input:checked) {
         background-color: #ffffff !important;
         border: 3px solid #29b5e8 !important;
-    }
-
-    /* 2. サイドバーの開閉アイコンを「📺🔄」に変更 */
-    /* 閉じているときのボタン */
-    [data-testid="collapsedControl"] svg {
-        display: none !important;
-    }
-    [data-testid="collapsedControl"]::after {
-        font-size: 1.6rem;
-        cursor: pointer;
-    }
-    /* 開いているときのボタン */
-    [data-testid="stSidebarHeader"] button svg {
-        display: none !important;
-    }
-    [data-testid="stSidebarHeader"] button::after {
-        font-size: 1.6rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -73,6 +53,11 @@ def get_image_base64(image_path):
 @st.cache_resource
 def get_active_users():
     return {}
+
+# --- 全ユーザーでランキングを共有するためのグローバルリスト ---
+@st.cache_resource
+def get_global_rankings():
+    return []
 
 # ------------------------------------------------
 # リアルタイム更新（フラグメント）
@@ -101,8 +86,6 @@ if "elapsed_time" not in st.session_state:
     st.session_state.elapsed_time = 0
 if "current_q" not in st.session_state:
     st.session_state.current_q = 1
-if "rankings" not in st.session_state:
-    st.session_state.rankings = []
 if "wrong_choices" not in st.session_state:
     st.session_state.wrong_choices = []
 
@@ -144,6 +127,7 @@ QUIZ_DATA = [
 # ------------------------------------------------
 def page_main_quiz():
     active_users = get_active_users() 
+    global_rankings = get_global_rankings()
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
@@ -230,10 +214,12 @@ def page_main_quiz():
                         active_users[st.session_state.username] = st.session_state.current_q
                     else:
                         st.session_state.elapsed_time = time.time() - st.session_state.start_time
-                        st.session_state.rankings.append({
+                        
+                        global_rankings.append({
                             "プレイヤー名": st.session_state.username,
                             "クリアタイム": round(st.session_state.elapsed_time, 2)
                         })
+                        
                         st.session_state.phase = "result"
                         if st.session_state.username in active_users:
                             del active_users[st.session_state.username]
@@ -306,11 +292,13 @@ def page_ranking():
     if st.session_state.phase == "quiz":
         st.info("💡 現在クイズに挑戦中です！左のメニューから「クイズ」に戻ると、続きから再開できます。")
     
-    if not st.session_state.rankings:
+    global_rankings = get_global_rankings()
+    
+    if not global_rankings:
         st.write("まだ参加者がいません。あなたが最初のチャレンジャーになりましょう！")
         return
 
-    sorted_ranking = sorted(st.session_state.rankings, key=lambda x: x["クリアタイム"])
+    sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
     df = pd.DataFrame(sorted_ranking)
     df.index = [f"{i+1}位" for i in range(len(df))]
     
