@@ -11,6 +11,12 @@ def get_image_base64(image_path):
             return base64.b64encode(img_file.read()).decode()
     return None
 
+# --- 【新機能②】全ユーザーの進行状況を共有するためのグローバル辞書 ---
+@st.cache_resource
+def get_active_users():
+    # { "ユーザー名": 現在の設問番号 } の形で保存
+    return {}
+
 # ------------------------------------------------
 # 初期設定とステート管理
 # ------------------------------------------------
@@ -68,9 +74,10 @@ QUIZ_DATA = [
 # ページ1: クイズ画面（ログイン・クイズ・結果を内包）
 # ------------------------------------------------
 def page_main_quiz():
+    active_users = get_active_users() # グローバルな進行状況を取得
+
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        # 【修正1】タイトルを行分け
         st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h1>", unsafe_allow_html=True)
         st.write("")
         st.write("")
@@ -88,13 +95,30 @@ def page_main_quiz():
                 st.session_state.start_time = time.time()
                 st.session_state.phase = "quiz"
                 st.session_state.current_q = 1
-                st.session_state.wrong_choices = [] 
+                st.session_state.wrong_choices = []
+                # ユーザーの開始をグローバルに記録
+                active_users[username] = 1
                 st.rerun()
 
     # --- クイズ実行フェーズ ---
     elif st.session_state.phase == "quiz":
         q_idx = st.session_state.current_q - 1
         q_data = QUIZ_DATA[q_idx]
+
+        # 【新機能①】右上にリアルタイムタイマーを表示（JavaScriptを注入）
+        # ※ブラウザ上の現在時刻からスタート時刻を引いて表示し続ける
+        timer_html = f"""
+        <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
+        <script>
+            const startTime = {st.session_state.start_time * 1000};
+            setInterval(function() {{
+                const now = Date.now();
+                const diff = (now - startTime) / 1000;
+                document.getElementById('live-timer').innerText = "⏱️ " + diff.toFixed(2) + "秒";
+            }}, 100);
+        </script>
+        """
+        st.components.v1.html(timer_html, height=40)
 
         st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
         
@@ -134,6 +158,8 @@ def page_main_quiz():
                     st.session_state.wrong_choices = [] 
                     if st.session_state.current_q < 5:
                         st.session_state.current_q += 1
+                        # グローバルの進行状況を更新
+                        active_users[st.session_state.username] = st.session_state.current_q
                     else:
                         st.session_state.elapsed_time = time.time() - st.session_state.start_time
                         st.session_state.rankings.append({
@@ -141,6 +167,9 @@ def page_main_quiz():
                             "クリアタイム": round(st.session_state.elapsed_time, 2)
                         })
                         st.session_state.phase = "result"
+                        # ゴールしたのでアクティブユーザーから除外
+                        if st.session_state.username in active_users:
+                            del active_users[st.session_state.username]
                 else:
                     st.session_state.wrong_choices.append(user_choice)
                 
@@ -152,6 +181,12 @@ def page_main_quiz():
         
         progress_val = st.session_state.current_q / 5
         st.progress(progress_val)
+        
+        # 【新機能②】同じ設問にいるユーザー数を集計して表示
+        # 辞書の中から、現在の設問番号と同じ番号にいるユーザーを数える
+        same_q_users = sum(1 for q in active_users.values() if q == st.session_state.current_q)
+        
+        st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人が第{st.session_state.current_q}問を回答中！</p>", unsafe_allow_html=True)
         
         messages = {
             1: "さあ、始まりました！どんどん答えていこう！",
@@ -167,20 +202,16 @@ def page_main_quiz():
         st.balloons()
         st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
         
-        # 【修正2】「ユーザー名」で改行、「参加…ます！」を1行に
         st.markdown(f"<h4 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
         
         st.markdown(f"<h3 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h3>", unsafe_allow_html=True)
         
         st.divider()
         
-        # 【修正3】「もっとコミュニティを楽しもう！」を1行に収まるサイズに調整
         st.markdown("<p style='text-align: center; font-size: 1.1rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
         
-        # 【修正4】snowvillageの画像をリンク化
         img_base64 = get_image_base64("image_f9229b.png")
         if img_base64:
-            # 画像が存在する場合はクリッカブルな画像を表示
             html_img_link = f"""
             <div style="display: flex; justify-content: center;">
                 <a href="https://snowvillage.cloud/" target="_blank">
@@ -190,7 +221,6 @@ def page_main_quiz():
             """
             st.markdown(html_img_link, unsafe_allow_html=True)
         else:
-            # 画像が見つからない場合のフォールバック（デバッグ用）
             st.warning("⚠️ `image_f9229b.png` が見つかりません。app.pyと同じフォルダに配置してください。")
             st.link_button("❄️ snowvillage はこちら！", "https://snowvillage.cloud/", use_container_width=True)
         
