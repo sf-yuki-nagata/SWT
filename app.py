@@ -1,3 +1,9 @@
+import streamlit as st
+import time
+import pandas as pd
+import base64
+import os
+
 # --- カスタムデザインを適用するCSS ---
 def inject_custom_css():
     st.markdown("""
@@ -15,12 +21,14 @@ def inject_custom_css():
         transition: all 0.2s ease;
     }
     .stRadio [role="radiogroup"] label:hover {
-        transform: translateY(-2px); 
+        transform: translateY(-2px); /* ホバー時に少し浮くアニメーション */
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+    /* デフォルトの丸ポッチ（ドット）を非表示 */
     .stRadio [role="radiogroup"] label > div:first-child {
         display: none !important;
     }
+    /* 文字を黒の太字、中央揃え */
     .stRadio [role="radiogroup"] label p {
         color: black !important;
         font-weight: 900 !important;
@@ -29,44 +37,303 @@ def inject_custom_css():
         margin: 0 !important;
         width: 100%;
     }
+    /* 選択中のボタンのスタイル（白背景にして枠線を残す） */
     .stRadio [role="radiogroup"] label:has(input:checked) {
         background-color: #ffffff !important;
         border: 3px solid #29b5e8 !important;
     }
 
-    /* 2. サイドバーの開閉アイコンを完全に「📺🔄」に変更する強力なハック */
-    /* 閉じているときの左上のアイコン (>>) を上書き */
+    /* 2. サイドバーの開閉アイコンを「📺🔄」に変更 */
+    /* 閉じているときのボタン */
     [data-testid="collapsedControl"] svg {
-        visibility: hidden !important; /* 元のアイコンを見えなくする */
+        display: none !important;
     }
-    [data-testid="collapsedControl"] {
-        position: relative !important;
+    [data-testid="collapsedControl"]::after {
+        content: "📺🔄";
+        font-size: 1.6rem;
+        cursor: pointer;
     }
-    [data-testid="collapsedControl"]::before {
-        content: "📺🔄" !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        font-size: 1.4rem !important;
-        visibility: visible !important;
+    /* 開いているときのボタン */
+    [data-testid="stSidebarHeader"] button svg {
+        display: none !important;
     }
-
-    /* 開いているときのサイドバー内の閉じるアイコン (<) も揃える */
-    [data-testid="stSidebarCollapseButton"] svg {
-        visibility: hidden !important;
-    }
-    [data-testid="stSidebarCollapseButton"] {
-        position: relative !important;
-    }
-    [data-testid="stSidebarCollapseButton"]::before {
-        content: "📺🔄" !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        font-size: 1.4rem !important;
-        visibility: visible !important;
+    [data-testid="stSidebarHeader"] button::after {
+        content: "📺🔄";
+        font-size: 1.6rem;
     }
     </style>
     """, unsafe_allow_html=True)
+
+# --- 画像をHTMLで表示するためのBase64エンコード関数 ---
+def get_image_base64(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
+
+# --- 全ユーザーの進行状況を共有するためのグローバル辞書 ---
+@st.cache_resource
+def get_active_users():
+    return {}
+
+# ------------------------------------------------
+# リアルタイム更新（フラグメント）
+# ------------------------------------------------
+@st.fragment(run_every=3)
+def show_active_users_fragment(current_q):
+    active_users = get_active_users()
+    same_q_users = sum(1 for q in active_users.values() if q == current_q)
+    st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
+
+# ------------------------------------------------
+# 初期設定とステート管理
+# ------------------------------------------------
+st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️")
+
+# --- カスタムCSSの呼び出し ---
+inject_custom_css()
+
+if "phase" not in st.session_state:
+    st.session_state.phase = "login"
+if "username" not in st.session_state:
+    st.session_state.username = ""
+if "start_time" not in st.session_state:
+    st.session_state.start_time = 0
+if "elapsed_time" not in st.session_state:
+    st.session_state.elapsed_time = 0
+if "current_q" not in st.session_state:
+    st.session_state.current_q = 1
+if "rankings" not in st.session_state:
+    st.session_state.rankings = []
+if "wrong_choices" not in st.session_state:
+    st.session_state.wrong_choices = []
+
+QUIZ_DATA = [
+    {
+        "q": "チームメンバーとSnowflake上でシームレスにデータ分析やAI開発の共同作業を行うための環境・機能の名称は何ですか？",
+        "opts": ["Snowflake TeamWork", "Snowflake CoWork", "Snowflake Collab", "Snowflake SharedSpace"],
+        "ans": "Snowflake CoWork",
+        "hint": "「共に働く（Co-Work）」がキーワードの機能です！"
+    },
+    {
+        "q": "AIアプリケーションやデータ処理において、リソースやコストの最適化・効率的な運用管理を支援する機能・サービスの名称はどれですか？",
+        "opts": ["Snowflake FinOps", "Snowflake Optimizer", "Snowflake CoCo", "Snowflake CostManager"],
+        "ans": "Snowflake CoCo",
+        "hint": "頭文字をとって「CoCo」と呼ばれています！"
+    },
+    {
+        "q": "セキュリティとガバナンス基盤である「Snowflake Horizon」において、AIモデルにデータの構造や意味（文脈）を理解させるための機能はどれですか？",
+        "opts": ["Horizon Semantic", "Horizon Context", "Horizon Graph", "Horizon Meaning"],
+        "ans": "Horizon Context",
+        "hint": "AIがデータの「文脈（Context）」を深く理解するために重要な機能です。"
+    },
+    {
+        "q": "生成AIモデルとSnowflake内のエンタープライズデータを、安全かつ標準化されたプロトコルで接続するためのコネクタの名称は何ですか？",
+        "opts": ["AI-Data APIコネクタ", "Snowflake LLM Bridge", "Secure Model Link", "MCP（Model Context Protocol）コネクタ"],
+        "ans": "MCP（Model Context Protocol）コネクタ",
+        "hint": "Anthropic社などが提唱している標準プロトコル（MCP）に対応したコネクタです！"
+    },
+    {
+        "q": "Snowflakeの日本コミュニティの名称は？",
+        "opts": ["SnowMountain", "Snowvillage", "SnowCity", "SnowTown"],
+        "ans": "Snowvillage",
+        "hint": "村（village）のように温かく、みんなで助け合うコミュニティです！"
+    }
+]
+
+# ------------------------------------------------
+# ページ1: クイズ画面（ログイン・クイズ・結果を内包）
+# ------------------------------------------------
+def page_main_quiz():
+    active_users = get_active_users() 
+
+    # --- ログインフェーズ ---
+    if st.session_state.phase == "login":
+        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h1>", unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("<h4 style='text-align: center;'>プレイヤー名を入力してください</h4>", unsafe_allow_html=True)
+            username = st.text_input("ユーザー名", label_visibility="collapsed", placeholder="例：スノウ太郎")
+            
+            st.write("")
+            start_btn = st.button("🚀 クイズスタート！", type="primary", use_container_width=True, disabled=not username)
+            
+            if start_btn:
+                st.session_state.username = username
+                st.session_state.start_time = time.time()
+                st.session_state.phase = "quiz"
+                st.session_state.current_q = 1
+                st.session_state.wrong_choices = []
+                active_users[username] = 1
+                st.rerun()
+
+    # --- クイズ実行フェーズ ---
+    elif st.session_state.phase == "quiz":
+        q_idx = st.session_state.current_q - 1
+        q_data = QUIZ_DATA[q_idx]
+
+        timer_html = f"""
+        <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
+        <script>
+            const startTime = {st.session_state.start_time * 1000};
+            setInterval(function() {{
+                const now = Date.now();
+                const diff = (now - startTime) / 1000;
+                document.getElementById('live-timer').innerText = "⏱️ " + diff.toFixed(2) + "秒";
+            }}, 100);
+        </script>
+        """
+        st.components.v1.html(timer_html, height=40)
+
+        st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
+        
+        mistake_count = len(st.session_state.wrong_choices)
+        if mistake_count > 0:
+            st.markdown("<h4 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h4>", unsafe_allow_html=True)
+            if mistake_count == 1:
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>惜しい！もう一度よく考えてみよう！</p>", unsafe_allow_html=True)
+            elif mistake_count == 2:
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>あと少し！選択肢が絞られてきたぞ！</p>", unsafe_allow_html=True)
+            elif mistake_count >= 3:
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
+            
+        st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
+        
+        show_active_users_fragment(st.session_state.current_q)
+        
+        st.divider()
+
+        with st.expander(f"💡 ヒントを見る (第{st.session_state.current_q}問)"):
+            st.write(q_data["hint"])
+
+        st.write("")
+
+        available_opts = [opt for opt in q_data["opts"] if opt not in st.session_state.wrong_choices]
+        
+        user_choice = st.radio(
+            "回答を選択してください", 
+            available_opts, 
+            index=None, 
+            label_visibility="collapsed"
+        )
+
+        st.write("")
+        
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("解答する", type="primary", use_container_width=True, disabled=not user_choice):
+                if user_choice == q_data["ans"]:
+                    st.session_state.wrong_choices = [] 
+                    if st.session_state.current_q < 5:
+                        st.session_state.current_q += 1
+                        active_users[st.session_state.username] = st.session_state.current_q
+                    else:
+                        st.session_state.elapsed_time = time.time() - st.session_state.start_time
+                        st.session_state.rankings.append({
+                            "プレイヤー名": st.session_state.username,
+                            "クリアタイム": round(st.session_state.elapsed_time, 2)
+                        })
+                        st.session_state.phase = "result"
+                        if st.session_state.username in active_users:
+                            del active_users[st.session_state.username]
+                else:
+                    st.session_state.wrong_choices.append(user_choice)
+                
+                st.rerun()
+
+        st.write("")
+        st.write("")
+        st.divider()
+        
+        progress_val = st.session_state.current_q / 5
+        st.progress(progress_val)
+        
+        messages = {
+            1: "さあ、始まりました！どんどん答えていこう！",
+            2: "いいペースです！その調子！",
+            3: "折り返し地点！落ち着いていこう！",
+            4: "あと1問！",
+            5: "泣いても笑っても最後の問題！"
+        }
+        st.markdown(f"<p style='text-align: center; color: gray;'>({st.session_state.current_q}/5) {messages[st.session_state.current_q]}</p>", unsafe_allow_html=True)
+
+    # --- 結果発表フェーズ ---
+    elif st.session_state.phase == "result":
+        st.balloons()
+        st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
+        
+        st.markdown(f"<h4 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
+        
+        st.markdown(f"<h3 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h3>", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        st.markdown("<p style='text-align: center; font-size: 1.1rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
+        
+        img_base64 = get_image_base64("image_f9229b.png")
+        if img_base64:
+            html_img_link = f"""
+            <div style="display: flex; justify-content: center;">
+                <a href="https://snowvillage.cloud/" target="_blank">
+                    <img src="data:image/png;base64,{img_base64}" style="width: 150px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                </a>
+            </div>
+            """
+            st.markdown(html_img_link, unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ `image_f9229b.png` が見つかりません。app.pyと同じフォルダに配置してください。")
+            st.link_button("❄️ snowvillage はこちら！", "https://snowvillage.cloud/", use_container_width=True)
+        
+        st.write("")
+        st.write("")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("もう一度挑戦する（別名でプレイ）", icon="🔄", use_container_width=True):
+                st.session_state.phase = "login"
+                st.session_state.username = ""
+                st.session_state.wrong_choices = []
+                st.rerun()
+
+# ------------------------------------------------
+# ページ2: いつでも見れるランキング画面
+# ------------------------------------------------
+def page_ranking():
+    st.title("🏆 リーダーボード")
+    st.write("現在のタイムアタックランキングです！")
+    
+    if st.session_state.phase == "quiz":
+        st.info("💡 現在クイズに挑戦中です！左のメニューから「クイズ」に戻ると、続きから再開できます。")
+    
+    if not st.session_state.rankings:
+        st.write("まだ参加者がいません。あなたが最初のチャレンジャーになりましょう！")
+        return
+
+    sorted_ranking = sorted(st.session_state.rankings, key=lambda x: x["クリアタイム"])
+    df = pd.DataFrame(sorted_ranking)
+    df.index = [f"{i+1}位" for i in range(len(df))]
+    
+    st.dataframe(
+        df, 
+        use_container_width=True,
+        column_config={
+            "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
+            "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
+        }
+    )
+
+# ------------------------------------------------
+# ナビゲーションの構築（常時表示）
+# ------------------------------------------------
+quiz_page = st.Page(page_main_quiz, title="クイズ", icon="🎮", default=True)
+ranking_page = st.Page(page_ranking, title="ランキング", icon="🏆")
+
+pg = st.navigation(
+    {
+        "メインメニュー": [quiz_page, ranking_page]
+    }
+)
+pg.run()
