@@ -17,6 +17,15 @@ def get_active_users():
     return {}
 
 # ------------------------------------------------
+# 【新機能】数秒おきに自動更新される部分（フラグメント）
+# ------------------------------------------------
+@st.fragment(run_every=3) # 3秒ごとにこの関数だけ自動再実行
+def show_active_users_fragment(current_q):
+    active_users = get_active_users()
+    same_q_users = sum(1 for q in active_users.values() if q == current_q)
+    st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
+
+# ------------------------------------------------
 # 初期設定とステート管理
 # ------------------------------------------------
 st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️")
@@ -103,7 +112,6 @@ def page_main_quiz():
         q_idx = st.session_state.current_q - 1
         q_data = QUIZ_DATA[q_idx]
 
-        # 右上のリアルタイムタイマー
         timer_html = f"""
         <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
         <script>
@@ -129,16 +137,15 @@ def page_main_quiz():
             elif mistake_count >= 3:
                 st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
             
-        # 設問の表示
         st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
-        # 【変更】他のユーザーの状況を設問の直下に移動
-        same_q_users = sum(1 for q in active_users.values() if q == st.session_state.current_q)
-        st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
+        # 【変更】3秒おきに自動更新される部分を呼び出し
+        show_active_users_fragment(st.session_state.current_q)
         
         st.divider()
 
-        with st.expander("💡 ヒントを見る"):
+        # 【変更】タイトルに問題番号を入れることで、次の問題に進むと自動で閉じるようにする
+        with st.expander(f"💡 ヒントを見る (第{st.session_state.current_q}問)"):
             st.write(q_data["hint"])
 
         st.write("")
