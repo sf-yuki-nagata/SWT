@@ -11,10 +11,9 @@ def get_image_base64(image_path):
             return base64.b64encode(img_file.read()).decode()
     return None
 
-# --- 【新機能②】全ユーザーの進行状況を共有するためのグローバル辞書 ---
+# --- 全ユーザーの進行状況を共有するためのグローバル辞書 ---
 @st.cache_resource
 def get_active_users():
-    # { "ユーザー名": 現在の設問番号 } の形で保存
     return {}
 
 # ------------------------------------------------
@@ -74,7 +73,7 @@ QUIZ_DATA = [
 # ページ1: クイズ画面（ログイン・クイズ・結果を内包）
 # ------------------------------------------------
 def page_main_quiz():
-    active_users = get_active_users() # グローバルな進行状況を取得
+    active_users = get_active_users() 
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
@@ -96,7 +95,6 @@ def page_main_quiz():
                 st.session_state.phase = "quiz"
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
-                # ユーザーの開始をグローバルに記録
                 active_users[username] = 1
                 st.rerun()
 
@@ -105,8 +103,7 @@ def page_main_quiz():
         q_idx = st.session_state.current_q - 1
         q_data = QUIZ_DATA[q_idx]
 
-        # 【新機能①】右上にリアルタイムタイマーを表示（JavaScriptを注入）
-        # ※ブラウザ上の現在時刻からスタート時刻を引いて表示し続ける
+        # 右上のリアルタイムタイマー
         timer_html = f"""
         <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
         <script>
@@ -132,7 +129,13 @@ def page_main_quiz():
             elif mistake_count >= 3:
                 st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
             
+        # 設問の表示
         st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
+        
+        # 【変更】他のユーザーの状況を設問の直下に移動
+        same_q_users = sum(1 for q in active_users.values() if q == st.session_state.current_q)
+        st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
+        
         st.divider()
 
         with st.expander("💡 ヒントを見る"):
@@ -158,7 +161,6 @@ def page_main_quiz():
                     st.session_state.wrong_choices = [] 
                     if st.session_state.current_q < 5:
                         st.session_state.current_q += 1
-                        # グローバルの進行状況を更新
                         active_users[st.session_state.username] = st.session_state.current_q
                     else:
                         st.session_state.elapsed_time = time.time() - st.session_state.start_time
@@ -167,7 +169,6 @@ def page_main_quiz():
                             "クリアタイム": round(st.session_state.elapsed_time, 2)
                         })
                         st.session_state.phase = "result"
-                        # ゴールしたのでアクティブユーザーから除外
                         if st.session_state.username in active_users:
                             del active_users[st.session_state.username]
                 else:
@@ -181,12 +182,6 @@ def page_main_quiz():
         
         progress_val = st.session_state.current_q / 5
         st.progress(progress_val)
-        
-        # 【新機能②】同じ設問にいるユーザー数を集計して表示
-        # 辞書の中から、現在の設問番号と同じ番号にいるユーザーを数える
-        same_q_users = sum(1 for q in active_users.values() if q == st.session_state.current_q)
-        
-        st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人が第{st.session_state.current_q}問を回答中！</p>", unsafe_allow_html=True)
         
         messages = {
             1: "さあ、始まりました！どんどん答えていこう！",
