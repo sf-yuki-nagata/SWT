@@ -107,7 +107,7 @@ QUIZ_DATA = [
         "hint": "コミュニティブースでもらえるシールに正解の数字が隠れてるよ"
     },
     {
-        "q": "右下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？",
+        "q": "下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？",
         "opts": ["Dynamic Table", "Snowflake Horizon", "Snowpark", "Iceberg Table"],
         "ans": "Iceberg Table",
         "hint": "右下のマーク、これが意味するものは"
