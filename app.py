@@ -226,14 +226,14 @@ def page_main_quiz():
             
         st.markdown(f"<h4 style='text-align: center; white-space: pre-wrap;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
-        # 🌟追加：特定の設問の場合のみ、画像を表示する
+        # 🌟変更：HTMLで直接サイズ指定（width="80"）してアイコンサイズで中央表示
         if "右下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
-            img_col1, img_col2, img_col3 = st.columns([1, 1, 1])
-            with img_col2:
-                if os.path.exists("image_c64ebb.png"):
-                    st.image("image_c64ebb.png", use_container_width=True)
-                else:
-                    st.warning("⚠️ `image_c64ebb.png` が見つかりません。")
+            img_b64 = get_image_base64("image_c64ebb.png")
+            if img_b64:
+                # 横幅を80pxにして文字と同等のサイズ感にする
+                st.markdown(f'<div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" width="80"></div>', unsafe_allow_html=True)
+            else:
+                st.warning("⚠️ `image_c64ebb.png` が見つかりません。")
         
         show_active_users_fragment(st.session_state.current_q)
         
