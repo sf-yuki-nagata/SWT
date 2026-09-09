@@ -80,10 +80,43 @@ def show_active_users_fragment(current_q):
     same_q_users = sum(1 for q in active_users.values() if q == current_q)
     st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold; font-size: 0.9rem; margin-bottom: 0px;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
 
+# 管理者ダッシュボード用のリアルタイム更新フラグメント
+@st.fragment(run_every=3)
+def admin_dashboard_content():
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.markdown("<h4 style='text-align: center; color: #555;'>📱 クイズに参加する</h4>", unsafe_allow_html=True)
+        if os.path.exists("QR.png"):
+            st.image("QR.png", use_container_width=True)
+        else:
+            st.warning("⚠️ `QR.png` が見つかりません。")
+            
+    with col2:
+        st.markdown("<h4 style='text-align: center; color: #555;'>🏆 リアルタイムランキング</h4>", unsafe_allow_html=True)
+        global_rankings = get_global_rankings()
+        
+        if not global_rankings:
+            st.info("まだ参加者がいません。")
+        else:
+            sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
+            df = pd.DataFrame(sorted_ranking)
+            df.index = [f"{i+1}位" for i in range(len(df))]
+            
+            st.dataframe(
+                df, 
+                use_container_width=True,
+                column_config={
+                    "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
+                    "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
+                },
+                height=400 # ランキング表の高さをある程度確保
+            )
+
 # ------------------------------------------------
 # 初期設定とステート管理
 # ------------------------------------------------
-st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️")
+st.set_page_config(page_title="Snowvillage Quiz", page_icon="❄️", layout="wide")
 
 # --- カスタムCSSの呼び出し ---
 inject_custom_css()
@@ -102,11 +135,13 @@ if "wrong_choices" not in st.session_state:
     st.session_state.wrong_choices = []
 if "quiz_data" not in st.session_state:
     st.session_state.quiz_data = []
+if "admin_logged_in" not in st.session_state:
+    st.session_state.admin_logged_in = False
 
 # --- Excelから抽出・整理したクイズデータ ---
 QUIZ_DATA = [
     {
-        "q": "日本のsnowflakeユーザーのコミュニティ名は？",
+        "q": "日本のコミュニティは？",
         "opts": ["SnowVillage", "SnowCircle", "SnowSaber", "SnowNeighbors"],
         "ans": "SnowVillage",
         "hint": "コミュニティブースの「POWERED BY」の後ろに注目！"
@@ -127,7 +162,7 @@ QUIZ_DATA = [
         "q": "企業がAIをビジネスに適用し、使いこなすためのプラットフォームとしてのSnowflakeのポジションを表すキーワードは？",
         "opts": ["AI Data Cloud", "Enterprise Lakehouse", "Data Cloud", "Cloud DWH"],
         "ans": "AI Data Cloud",
-        "hint": "組織が重要なデータとアプリケーションに接続し、コラボレーションを行ってイノベーションを推進するための『グローバルなネットワーク』として定義されていますな"
+        "hint": "組織が重要なデータとアプリケーションに接続し、コラボレーションを行ってイノベーションを推進するための『グローバルなネットワーク』として定義されています"
     },
     {
         "q": "自然言語の指示からSQLやPythonコードを生成し、データエンジニアリングやアプリ開発のワークフローを支援するデータネイティブなAIコーディングエージェントの名称はどれですか？",
@@ -145,13 +180,13 @@ QUIZ_DATA = [
         "q": "2025年9月にリリースされた、コードの管理やモデルの開発もできGitの統合もできる開発環境は？",
         "opts": ["snowsight", "Snowflake Notebooks", "Workspace", "Worksheet"],
         "ans": "Workspace",
-        "hint": "これまで別々だったNotebookやSQLワークシートなどの開発ツールを、一つの「プロジェクト専用の空間」にまとめたような機能であることから名付けられています！"
+        "hint": "これまで別々だったNotebookやSQLワークシートなどの開発ツールを、一つの「プロジェクト専用の空間」にまとめたような機能であることから名付けられています。"
     },
     {
         "q": "Snowflakeにおいて、AIエージェントやBIツールが共通のビジネスロジックを理解できるように、データ資産のメタデータを収集・強化し、一貫した意味（セマンティクス）やリネージを提供するガバナンス機能はどれですか？",
         "opts": ["Universal Search", "Trust Center", "Horizon Context", "Snowflake Cortex"],
         "ans": "Horizon Context",
-        "hint": "メタデータから「ビジネスの文脈」を構築し、AIに正しい意味を理解させるためのレイヤーのことですね"
+        "hint": "メタデータから「ビジネスの文脈」を構築し、AIに正しい意味を理解させるためのレイヤー"
     },
     {
         "q": "Streamlitでのアプリ開発を学べるクリスマス企画「○○days of Streamlit」は何日で完結するコンテンツでしょうか？",
@@ -170,8 +205,7 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        # 🌟変更: 「クイズ」の前で綺麗に改行されるように <br> を追加
-        st.markdown("<h3 style='text-align: center; color: #29b5e8;'> Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
         col1, col2, col3 = st.columns([1, 5, 1])
@@ -382,31 +416,59 @@ def page_ranking():
                 "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
             }
         )
+
+# ------------------------------------------------
+# ページ3: 管理者画面（ダッシュボード＆リセット）
+# ------------------------------------------------
+def page_admin():
+    # ログインしていない場合の表示
+    if not st.session_state.admin_logged_in:
+        st.markdown("<h3 style='text-align: center;'>🔒 管理者ログイン</h3>", unsafe_allow_html=True)
+        st.write("")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            admin_pw = st.text_input("パスワードを入力してください", type="password")
+            if st.button("ログイン", use_container_width=True):
+                if admin_pw == "streamlit":
+                    st.session_state.admin_logged_in = True
+                    st.rerun()
+                else:
+                    st.error("パスワードが違います。")
     
-    st.write("")
-    
-    with st.expander("⚙️ 管理者用メニュー"):
-        st.write("※ランキングのデータを空にするにはパスワードを入力してください")
-        admin_pw = st.text_input("パスワード", type="password", key="admin_pw")
+    # ログイン済みの表示（ダッシュボード）
+    else:
+        st.markdown("<h2 style='text-align: center; color: #29b5e8;'>streamlitでクイズに挑戦しよう！！</h2>", unsafe_allow_html=True)
+        st.write("")
         
-        if st.button("🗑️ ランキングをリセットする", use_container_width=True):
-            if admin_pw == "streamlit":
-                global_rankings.clear()
+        # QRコードとランキングをリアルタイムで表示
+        admin_dashboard_content()
+        
+        st.divider()
+        
+        # 管理者用のアクションボタン
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("🗑️ ランキングをリセットする", use_container_width=True, type="primary"):
+                get_global_rankings().clear()
                 st.success("ランキングをリセットしました！")
-                time.sleep(1) 
+                time.sleep(1)
                 st.rerun()
-            else:
-                st.error("パスワードが違います。")
+                
+            st.write("")
+            if st.button("🚪 ログアウト", use_container_width=True):
+                st.session_state.admin_logged_in = False
+                st.rerun()
 
 # ------------------------------------------------
 # ナビゲーションの構築（常時表示）
 # ------------------------------------------------
 quiz_page = st.Page(page_main_quiz, title="クイズ", icon="🎮", default=True)
 ranking_page = st.Page(page_ranking, title="ランキング", icon="🏆")
+admin_page = st.Page(page_admin, title="管理者画面", icon="⚙️")
 
 pg = st.navigation(
     {
-        "メインメニュー": [quiz_page, ranking_page]
+        "メインメニュー": [quiz_page, ranking_page, admin_page]
     }
 )
 pg.run()
