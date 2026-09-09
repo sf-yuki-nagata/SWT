@@ -20,9 +20,9 @@ def inject_custom_css():
     }
     .stRadio [role="radiogroup"] label {
         background-color: #29b5e8 !important; 
-        border-radius: 12px !important;        
-        padding: 12px !important; /* パディングも少し縮小 */
-        border: 3px solid #29b5e8 !important;
+        border-radius: 10px !important;        
+        padding: 6px 12px !important; /* 上下のパディングを減らして高さを細く調整 */
+        border: 2px solid #29b5e8 !important; /* 枠線も少し細くスッキリさせる */
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -36,14 +36,14 @@ def inject_custom_css():
     .stRadio [role="radiogroup"] label p {
         color: black !important;
         font-weight: 900 !important;
-        font-size: 0.95rem !important; /* 1.1rem -> 0.95rem に縮小 */
+        font-size: 0.95rem !important; 
         text-align: center !important;
         margin: 0 !important;
         width: 100%;
     }
     .stRadio [role="radiogroup"] label:has(input:checked) {
         background-color: #ffffff !important;
-        border: 3px solid #29b5e8 !important;
+        border: 2px solid #29b5e8 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -164,14 +164,12 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        # h1 -> h2 に縮小
         st.markdown("<h2 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h2>", unsafe_allow_html=True)
         st.write("")
         st.write("")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # h4 -> h5 に縮小
             st.markdown("<h5 style='text-align: center;'>プレイヤー名を入力してください</h5>", unsafe_allow_html=True)
             username = st.text_input("ユーザー名", label_visibility="collapsed", placeholder="例：スノウ太郎")
             
@@ -215,7 +213,6 @@ def page_main_quiz():
         q_data = st.session_state.quiz_data[q_idx]
         TOTAL_Q = len(st.session_state.quiz_data) 
 
-        # タイマーのサイズを 1.2rem -> 1.0rem に縮小
         timer_html = f"""
         <div style="text-align: right; font-size: 1.0rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
         <script>
@@ -229,12 +226,10 @@ def page_main_quiz():
         """
         st.components.v1.html(timer_html, height=40)
 
-        # h2 -> h3 に縮小
         st.markdown(f"<h3 style='text-align: center;'>第 {st.session_state.current_q} 問</h3>", unsafe_allow_html=True)
         
         mistake_count = len(st.session_state.wrong_choices)
         if mistake_count > 0:
-            # h4 -> h5, pタグのフォントサイズも追加で少し小さく
             st.markdown("<h5 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h5>", unsafe_allow_html=True)
             if mistake_count == 1:
                 st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22; font-size: 0.9rem;'>惜しい！もう一度よく考えてみよう！</p>", unsafe_allow_html=True)
@@ -243,7 +238,6 @@ def page_main_quiz():
             elif mistake_count >= 3:
                 st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22; font-size: 0.9rem;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
             
-        # 設問のサイズを h4 -> h5 に縮小し、行間を見やすく調整
         st.markdown(f"<h5 style='text-align: center; white-space: pre-wrap; line-height: 1.5;'>{q_data['q']}</h5>", unsafe_allow_html=True)
         
         if "下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
@@ -315,24 +309,19 @@ def page_main_quiz():
         else:
             msg = "いいペースです！その調子！"
 
-        # フォントサイズを少し小さく
         st.markdown(f"<p style='text-align: center; color: gray; font-size: 0.85rem;'>({st.session_state.current_q}/{TOTAL_Q}) {msg}</p>", unsafe_allow_html=True)
 
     # --- 結果発表フェーズ ---
     elif st.session_state.phase == "result":
         st.snow()
-        # h2 -> h3 に縮小
         st.markdown("<h3 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h3>", unsafe_allow_html=True)
         
-        # h4 -> h5 に縮小
         st.markdown(f"<h5 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h5>", unsafe_allow_html=True)
         
-        # h3 -> h4 に縮小
         st.markdown(f"<h4 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h4>", unsafe_allow_html=True)
         
         st.divider()
         
-        # 1.1rem -> 1.0rem に縮小
         st.markdown("<p style='text-align: center; font-size: 1.0rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
         
         img_base64 = get_image_base64("image_f9229b.png")
