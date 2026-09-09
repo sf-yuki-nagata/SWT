@@ -291,9 +291,8 @@ def page_main_quiz():
                 
                 st.rerun()
 
-        st.write("")
-        st.write("")
-        st.divider()
+        # 🌟変更：余分な余白（st.write）と st.divider を削除し、細い余白の横線に置換
+        st.markdown("<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #e6e6e6;'>", unsafe_allow_html=True)
         
         progress_val = st.session_state.current_q / TOTAL_Q
         st.progress(progress_val)
