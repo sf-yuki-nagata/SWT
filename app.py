@@ -110,7 +110,7 @@ QUIZ_DATA = [
         "q": "下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？",
         "opts": ["Dynamic Table", "Snowflake Horizon", "Snowpark", "Iceberg Table"],
         "ans": "Iceberg Table",
-        "hint": "右下のマーク、これが意味するものは"
+        "hint": "アイコンの右下のマーク、これが意味するものは"
     },
     {
         "q": "企業がAIをビジネスに適用し、使いこなすためのプラットフォームとしてのSnowflakeのポジションを表すキーワードは？",
@@ -227,7 +227,7 @@ def page_main_quiz():
         st.markdown(f"<h4 style='text-align: center; white-space: pre-wrap;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
         # 🌟変更：HTMLで直接サイズ指定（width="80"）してアイコンサイズで中央表示
-        if "右下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
+        if "下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
             img_b64 = get_image_base64("image_c64ebb.png")
             if img_b64:
                 # 横幅を80pxにして文字と同等のサイズ感にする
