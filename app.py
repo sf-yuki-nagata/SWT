@@ -106,7 +106,7 @@ if "quiz_data" not in st.session_state:
 # --- Excelから抽出・整理したクイズデータ ---
 QUIZ_DATA = [
     {
-        "q": "日本のコミュニティは？",
+        "q": "日本のsnowflakeユーザーのコミュニティ名は？",
         "opts": ["SnowVillage", "SnowCircle", "SnowSaber", "SnowNeighbors"],
         "ans": "SnowVillage",
         "hint": "コミュニティブースの「POWERED BY」の後ろに注目！"
@@ -127,7 +127,7 @@ QUIZ_DATA = [
         "q": "企業がAIをビジネスに適用し、使いこなすためのプラットフォームとしてのSnowflakeのポジションを表すキーワードは？",
         "opts": ["AI Data Cloud", "Enterprise Lakehouse", "Data Cloud", "Cloud DWH"],
         "ans": "AI Data Cloud",
-        "hint": "組織が重要なデータとアプリケーションに接続し、コラボレーションを行ってイノベーションを推進するための『グローバルなネットワーク』として定義されています"
+        "hint": "組織が重要なデータとアプリケーションに接続し、コラボレーションを行ってイノベーションを推進するための『グローバルなネットワーク』として定義されていますな"
     },
     {
         "q": "自然言語の指示からSQLやPythonコードを生成し、データエンジニアリングやアプリ開発のワークフローを支援するデータネイティブなAIコーディングエージェントの名称はどれですか？",
@@ -145,13 +145,13 @@ QUIZ_DATA = [
         "q": "2025年9月にリリースされた、コードの管理やモデルの開発もできGitの統合もできる開発環境は？",
         "opts": ["snowsight", "Snowflake Notebooks", "Workspace", "Worksheet"],
         "ans": "Workspace",
-        "hint": "これまで別々だったNotebookやSQLワークシートなどの開発ツールを、一つの「プロジェクト専用の空間」にまとめたような機能であることから名付けられています。"
+        "hint": "これまで別々だったNotebookやSQLワークシートなどの開発ツールを、一つの「プロジェクト専用の空間」にまとめたような機能であることから名付けられています！"
     },
     {
         "q": "Snowflakeにおいて、AIエージェントやBIツールが共通のビジネスロジックを理解できるように、データ資産のメタデータを収集・強化し、一貫した意味（セマンティクス）やリネージを提供するガバナンス機能はどれですか？",
         "opts": ["Universal Search", "Trust Center", "Horizon Context", "Snowflake Cortex"],
         "ans": "Horizon Context",
-        "hint": "メタデータから「ビジネスの文脈」を構築し、AIに正しい意味を理解させるためのレイヤー"
+        "hint": "メタデータから「ビジネスの文脈」を構築し、AIに正しい意味を理解させるためのレイヤーのことですね"
     },
     {
         "q": "Streamlitでのアプリ開発を学べるクリスマス企画「○○days of Streamlit」は何日で完結するコンテンツでしょうか？",
