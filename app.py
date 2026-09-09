@@ -257,7 +257,6 @@ def page_main_quiz():
         
         st.markdown("<hr style='margin: 10px 0px 15px 0px; border-top: 1px solid #e6e6e6;'>", unsafe_allow_html=True)
 
-        # 🌟変更：設問番号分の見えないゼロ幅スペース(\u200b)を追加し、次の問題に進んだ際に必ず閉じるようにする
         with st.expander("💡 ヒントを見る" + "\u200b" * st.session_state.current_q):
             st.write(q_data["hint"])
 
@@ -323,7 +322,9 @@ def page_main_quiz():
         
         st.divider()
         
-        st.markdown("<p style='text-align: center; font-size: 1.0rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
+        # 🌟追加・変更：「もっとコミュニティを楽しもう！」の下に「Let's go see SnowVillage!!!」を追加
+        st.markdown("<p style='text-align: center; font-size: 1.0rem; font-weight: bold; margin-bottom: 5px;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-size: 1.1rem; font-weight: bold; color: #29b5e8;'>Let's go see SnowVillage!!!</p>", unsafe_allow_html=True)
         
         img_base64 = get_image_base64("image_f9229b.png")
         if img_base64:
@@ -349,6 +350,11 @@ def page_main_quiz():
                 st.session_state.username = ""
                 st.session_state.wrong_choices = []
                 st.rerun()
+            
+            # 🌟追加：「ランキングを見よう！」ボタンを追加し、クリックでランキングページへ遷移
+            st.write("")
+            if st.button("ランキングを見よう！", icon="🏆", use_container_width=True):
+                st.switch_page(ranking_page)
 
 # ------------------------------------------------
 # ページ2: いつでも見れるランキング画面
