@@ -170,13 +170,12 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        st.markdown("<h2 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h2>", unsafe_allow_html=True)
-        st.write("")
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitでクイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
-        col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3 = st.columns([1, 5, 1])
         with col2:
-            st.markdown("<h5 style='text-align: center;'>プレイヤー名を入力してください</h5>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-weight: bold;'>プレイヤー名を入力してください</p>", unsafe_allow_html=True)
             username = st.text_input("ユーザー名", label_visibility="collapsed", placeholder="例：スノウ太郎")
             
             st.write("")
@@ -258,7 +257,8 @@ def page_main_quiz():
         
         st.markdown("<hr style='margin: 10px 0px 15px 0px; border-top: 1px solid #e6e6e6;'>", unsafe_allow_html=True)
 
-        with st.expander(f"💡 ヒントを見る"):
+        # 🌟変更：設問番号分の見えないゼロ幅スペース(\u200b)を追加し、次の問題に進んだ際に必ず閉じるようにする
+        with st.expander("💡 ヒントを見る" + "\u200b" * st.session_state.current_q):
             st.write(q_data["hint"])
 
         available_opts = [opt for opt in q_data["opts"] if opt not in st.session_state.wrong_choices]
@@ -354,7 +354,6 @@ def page_main_quiz():
 # ページ2: いつでも見れるランキング画面
 # ------------------------------------------------
 def page_ranking():
-    # 🌟変更: st.titleからh3タグに変更し、1行に収めて中央揃えに
     st.markdown("<h3 style='text-align: center;'>🏆 回答最速王</h3>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>現在の回答王番付はこちら🥇</p>", unsafe_allow_html=True)
     
@@ -381,11 +380,10 @@ def page_ranking():
     
     st.write("")
     
-    # 🌟追加: 手動で確実にリセットするための管理者用メニュー
     with st.expander("⚙️ 管理者用メニュー"):
         st.write("※ランキングのデータを空にします")
         if st.button("🗑️ ランキングをリセットする", use_container_width=True):
-            global_rankings.clear() # キャッシュされているリストの中身を空にする
+            global_rankings.clear()
             st.rerun()
 
 # ------------------------------------------------
