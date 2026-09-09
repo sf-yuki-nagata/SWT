@@ -9,14 +9,19 @@ import random
 def inject_custom_css():
     st.markdown("""
     <style>
+    /* 全体のベースフォントを少し小さく見せるための調整 */
+    .stApp {
+        font-size: 14px !important;
+    }
+    
     /* 1. ラジオボタンをSnowflakeブルーの角丸ボタン化 */
     .stRadio [role="radiogroup"] {
-        gap: 12px;
+        gap: 10px;
     }
     .stRadio [role="radiogroup"] label {
         background-color: #29b5e8 !important; 
         border-radius: 12px !important;        
-        padding: 15px !important;
+        padding: 12px !important; /* パディングも少し縮小 */
         border: 3px solid #29b5e8 !important;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -31,7 +36,7 @@ def inject_custom_css():
     .stRadio [role="radiogroup"] label p {
         color: black !important;
         font-weight: 900 !important;
-        font-size: 1.1rem !important;
+        font-size: 0.95rem !important; /* 1.1rem -> 0.95rem に縮小 */
         text-align: center !important;
         margin: 0 !important;
         width: 100%;
@@ -67,7 +72,7 @@ def get_global_rankings():
 def show_active_users_fragment(current_q):
     active_users = get_active_users()
     same_q_users = sum(1 for q in active_users.values() if q == current_q)
-    st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold; font-size: 0.9rem;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
 
 # ------------------------------------------------
 # 初期設定とステート管理
@@ -116,7 +121,7 @@ QUIZ_DATA = [
         "q": "企業がAIをビジネスに適用し、使いこなすためのプラットフォームとしてのSnowflakeのポジションを表すキーワードは？",
         "opts": ["AI Data Cloud", "Enterprise Lakehouse", "Data Cloud", "Cloud DWH"],
         "ans": "AI Data Cloud",
-        "hint": "特になし。自信を持って答えてね！"
+        "hint": "組織が重要なデータとアプリケーションに接続し、コラボレーションを行ってイノベーションを推進するための『グローバルなネットワーク』として定義されています"
     },
     {
         "q": "自然言語の指示からSQLやPythonコードを生成し、データエンジニアリングやアプリ開発のワークフローを支援するデータネイティブなAIコーディングエージェントの名称はどれですか？",
@@ -159,13 +164,15 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        st.markdown("<h1 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h1>", unsafe_allow_html=True)
+        # h1 -> h2 に縮小
+        st.markdown("<h2 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h2>", unsafe_allow_html=True)
         st.write("")
         st.write("")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.markdown("<h4 style='text-align: center;'>プレイヤー名を入力してください</h4>", unsafe_allow_html=True)
+            # h4 -> h5 に縮小
+            st.markdown("<h5 style='text-align: center;'>プレイヤー名を入力してください</h5>", unsafe_allow_html=True)
             username = st.text_input("ユーザー名", label_visibility="collapsed", placeholder="例：スノウ太郎")
             
             st.write("")
@@ -178,7 +185,6 @@ def page_main_quiz():
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
                 
-                # 問題と選択肢のシャッフル処理（最終問題を固定）
                 shuffled_quiz = []
                 last_q_data = None
                 
@@ -193,10 +199,8 @@ def page_main_quiz():
                     else:
                         shuffled_quiz.append(q_copy)
                 
-                # 最終問題以外をシャッフル
                 random.shuffle(shuffled_quiz)
                 
-                # 最後に固定の問題を追加
                 if last_q_data:
                     shuffled_quiz.append(last_q_data)
                     
@@ -211,8 +215,9 @@ def page_main_quiz():
         q_data = st.session_state.quiz_data[q_idx]
         TOTAL_Q = len(st.session_state.quiz_data) 
 
+        # タイマーのサイズを 1.2rem -> 1.0rem に縮小
         timer_html = f"""
-        <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
+        <div style="text-align: right; font-size: 1.0rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
         <script>
             const startTime = {st.session_state.start_time * 1000};
             setInterval(function() {{
@@ -224,24 +229,27 @@ def page_main_quiz():
         """
         st.components.v1.html(timer_html, height=40)
 
-        st.markdown(f"<h2 style='text-align: center;'>第 {st.session_state.current_q} 問</h2>", unsafe_allow_html=True)
+        # h2 -> h3 に縮小
+        st.markdown(f"<h3 style='text-align: center;'>第 {st.session_state.current_q} 問</h3>", unsafe_allow_html=True)
         
         mistake_count = len(st.session_state.wrong_choices)
         if mistake_count > 0:
-            st.markdown("<h4 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h4>", unsafe_allow_html=True)
+            # h4 -> h5, pタグのフォントサイズも追加で少し小さく
+            st.markdown("<h5 style='text-align: center; color: #ff4b4b;'>❌ 再挑戦！</h5>", unsafe_allow_html=True)
             if mistake_count == 1:
-                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>惜しい！もう一度よく考えてみよう！</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22; font-size: 0.9rem;'>惜しい！もう一度よく考えてみよう！</p>", unsafe_allow_html=True)
             elif mistake_count == 2:
-                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>あと少し！選択肢が絞られてきたぞ！</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22; font-size: 0.9rem;'>あと少し！選択肢が絞られてきたぞ！</p>", unsafe_allow_html=True)
             elif mistake_count >= 3:
-                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22; font-size: 0.9rem;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
             
-        st.markdown(f"<h4 style='text-align: center; white-space: pre-wrap;'>{q_data['q']}</h4>", unsafe_allow_html=True)
+        # 設問のサイズを h4 -> h5 に縮小し、行間を見やすく調整
+        st.markdown(f"<h5 style='text-align: center; white-space: pre-wrap; line-height: 1.5;'>{q_data['q']}</h5>", unsafe_allow_html=True)
         
         if "下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
             img_b64 = get_image_base64("image_c64ebb.png")
             if img_b64:
-                st.markdown(f'<div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" width="80"></div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" width="70"></div>', unsafe_allow_html=True)
             else:
                 st.warning("⚠️ `image_c64ebb.png` が見つかりません。")
         
@@ -307,28 +315,32 @@ def page_main_quiz():
         else:
             msg = "いいペースです！その調子！"
 
-        st.markdown(f"<p style='text-align: center; color: gray;'>({st.session_state.current_q}/{TOTAL_Q}) {msg}</p>", unsafe_allow_html=True)
+        # フォントサイズを少し小さく
+        st.markdown(f"<p style='text-align: center; color: gray; font-size: 0.85rem;'>({st.session_state.current_q}/{TOTAL_Q}) {msg}</p>", unsafe_allow_html=True)
 
     # --- 結果発表フェーズ ---
     elif st.session_state.phase == "result":
-        # 🌟変更：balloons()からsnow()に変更
         st.snow()
-        st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
+        # h2 -> h3 に縮小
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h3>", unsafe_allow_html=True)
         
-        st.markdown(f"<h4 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
+        # h4 -> h5 に縮小
+        st.markdown(f"<h5 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h5>", unsafe_allow_html=True)
         
-        st.markdown(f"<h3 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h3>", unsafe_allow_html=True)
+        # h3 -> h4 に縮小
+        st.markdown(f"<h4 style='text-align: center;'>あなたのタイム: <span style='color: #ff4b4b;'>{round(st.session_state.elapsed_time, 2)}秒</span></h4>", unsafe_allow_html=True)
         
         st.divider()
         
-        st.markdown("<p style='text-align: center; font-size: 1.1rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
+        # 1.1rem -> 1.0rem に縮小
+        st.markdown("<p style='text-align: center; font-size: 1.0rem; font-weight: bold;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
         
         img_base64 = get_image_base64("image_f9229b.png")
         if img_base64:
             html_img_link = f"""
             <div style="display: flex; justify-content: center;">
                 <a href="https://snowvillage.cloud/contents/" target="_blank">
-                    <img src="data:image/png;base64,{img_base64}" style="width: 150px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <img src="data:image/png;base64,{img_base64}" style="width: 140px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 </a>
             </div>
             """
