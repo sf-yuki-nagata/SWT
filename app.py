@@ -3,7 +3,7 @@ import time
 import pandas as pd
 import base64
 import os
-import random  # 🌟追加: ランダム化のためのモジュール
+import random
 
 # --- カスタムデザインを適用するCSS ---
 def inject_custom_css():
@@ -89,40 +89,64 @@ if "current_q" not in st.session_state:
     st.session_state.current_q = 1
 if "wrong_choices" not in st.session_state:
     st.session_state.wrong_choices = []
-# 🌟追加: シャッフルしたクイズデータを保持する変数
 if "quiz_data" not in st.session_state:
     st.session_state.quiz_data = []
 
+# --- 🌟Excelから抽出・整理したクイズデータ ---
 QUIZ_DATA = [
     {
-        "q": "チームメンバーとSnowflake上でシームレスにデータ分析やAI開発の共同作業を行うための環境・機能の名称は何ですか？",
-        "opts": ["Snowflake TeamWork", "Snowflake CoWork", "Snowflake Collab", "Snowflake SharedSpace"],
-        "ans": "Snowflake CoWork",
-        "hint": "「共に働く（Co-Work）」がキーワードの機能です！"
+        "q": "日本のコミュニティは？",
+        "opts": ["SnowVillage", "SnowCircle", "SnowSaber", "SnowNeighbors"],
+        "ans": "SnowVillage",
+        "hint": "コミュニティブースの「POWERED BY」の後ろに注目！"
     },
     {
-        "q": "AIアプリケーションやデータ処理において、リソースやコストの最適化・効率的な運用管理を支援する機能・サービスの名称はどれですか？",
-        "opts": ["Snowflake FinOps", "Snowflake Optimizer", "Snowflake CoCo", "Snowflake CostManager"],
+        "q": "日本のコミュニティは2026年9月現在、何人を突破した？\n（Slackワークスペースの参加人数）",
+        "opts": ["5000人", "2500人", "1000人", "500人"],
+        "ans": "2500人",
+        "hint": "コミュニティブースでもらえるシールに正解の数字が隠れてるよ"
+    },
+    {
+        "q": "右下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？",
+        "opts": ["Dynamic Table", "Snowflake Horizon", "Snowpark", "Iceberg Table"],
+        "ans": "Iceberg Table",
+        "hint": "右下のマーク、これが意味するものは"
+    },
+    {
+        "q": "企業がAIをビジネスに適用し、使いこなすためのプラットフォームとしてのSnowflakeのポジションを表すキーワードは？",
+        "opts": ["AI Data Cloud", "Enterprise Lakehouse", "Data Cloud", "Cloud DWH"],
+        "ans": "AI Data Cloud",
+        "hint": "特になし。自信を持って答えてね！"
+    },
+    {
+        "q": "自然言語の指示からSQLやPythonコードを生成し、データエンジニアリングやアプリ開発のワークフローを支援するデータネイティブなAIコーディングエージェントの名称はどれですか？",
+        "opts": ["Snowflake CoCo", "Snowflake CoWork", "Cortex AI", "Cortex ANALYST"],
         "ans": "Snowflake CoCo",
-        "hint": "頭文字をとって「CoCo」と呼ばれています！"
+        "hint": "頭文字から命名されていて、2026年のSummitで発表されたよ！"
     },
     {
-        "q": "セキュリティとガバナンス基盤である「Snowflake Horizon」において、AIモデルにデータの構造や意味（文脈）を理解させるための機能はどれですか？",
-        "opts": ["Horizon Semantic", "Horizon Context", "Horizon Graph", "Horizon Meaning"],
+        "q": "社内の数値データとテキストデータを横断して自然言語で分析し、グラフ作成からメール送信といった業務まで対話形式で自動化できる、ビジネスユーザー向けのAIワークアシスタント機能は？",
+        "opts": ["Snowflake Cortex", "Snowflake Horizon", "Snowflake Snowpark", "Snowflake CoWork"],
+        "ans": "Snowflake CoWork",
+        "hint": "売上などの「数値データ」と問い合わせ履歴などの「テキストデータ」の両方を掛け合わせた分析を「チャット形式」で行える機能といえば"
+    },
+    {
+        "q": "2025年9月にリリースされた、コードの管理やモデルの開発もできGitの統合もできる開発環境は？",
+        "opts": ["snowsight", "Snowflake Notebooks", "Workspace", "Worksheet"],
+        "ans": "Workspace",
+        "hint": "これまで別々だったNotebookやSQLワークシートなどの開発ツールを、一つの「プロジェクト専用の空間」にまとめたような機能であることから名付けられています。"
+    },
+    {
+        "q": "Snowflakeにおいて、AIエージェントやBIツールが共通のビジネスロジックを理解できるように、データ資産のメタデータを収集・強化し、一貫した意味（セマンティクス）やリネージを提供するガバナンス機能はどれですか？",
+        "opts": ["Universal Search", "Trust Center", "Horizon Context", "Snowflake Cortex"],
         "ans": "Horizon Context",
-        "hint": "AIがデータの「文脈（Context）」を深く理解するために重要な機能です。"
+        "hint": "メタデータから「ビジネスの文脈」を構築し、AIに正しい意味を理解させるためのレイヤー"
     },
     {
-        "q": "生成AIモデルとSnowflake内のエンタープライズデータを、安全かつ標準化されたプロトコルで接続するためのコネクタの名称は何ですか？",
-        "opts": ["AI-Data APIコネクタ", "Snowflake LLM Bridge", "Secure Model Link", "MCP（Model Context Protocol）コネクタ"],
-        "ans": "MCP（Model Context Protocol）コネクタ",
-        "hint": "Anthropic社などが提唱している標準プロトコル（MCP）に対応したコネクタです！"
-    },
-    {
-        "q": "Snowflakeの日本コミュニティの名称は？",
-        "opts": ["SnowMountain", "Snowvillage", "SnowCity", "SnowTown"],
-        "ans": "Snowvillage",
-        "hint": "村（village）のように温かく、みんなで助け合うコミュニティです！"
+        "q": "Streamlitでのアプリ開発を学べるクリスマス企画「○○days of Streamlit」は何日で完結するコンテンツでしょうか？",
+        "opts": ["30 days", "25 days", "24 days", "365 days"],
+        "ans": "25 days",
+        "hint": "クリスマスまでにstreamlitを覚えらるってことはクリスマスは12月何日？"
     }
 ]
 
@@ -154,19 +178,17 @@ def page_main_quiz():
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
                 
-                # 🌟追加・変更点: ここで問題をシャッフルし、セッションステートに保存する
+                # 問題と選択肢をシャッフル
                 shuffled_quiz = []
                 for q in QUIZ_DATA:
                     q_copy = q.copy()
-                    # 選択肢もランダムにする（固定したい場合は下の2行を削除してください）
                     opts_copy = q_copy["opts"].copy()
                     random.shuffle(opts_copy)
                     q_copy["opts"] = opts_copy
                     shuffled_quiz.append(q_copy)
                 
-                random.shuffle(shuffled_quiz) # 設問自体の順番をランダムに
+                random.shuffle(shuffled_quiz)
                 st.session_state.quiz_data = shuffled_quiz
-                # 🌟ここまで
 
                 active_users[username] = 1
                 st.rerun()
@@ -174,9 +196,8 @@ def page_main_quiz():
     # --- クイズ実行フェーズ ---
     elif st.session_state.phase == "quiz":
         q_idx = st.session_state.current_q - 1
-        
-        # 🌟変更点: グローバルのQUIZ_DATAではなく、シャッフル済みのquiz_dataを使う
         q_data = st.session_state.quiz_data[q_idx]
+        TOTAL_Q = len(st.session_state.quiz_data) # 問題数の動的取得
 
         timer_html = f"""
         <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
@@ -203,7 +224,7 @@ def page_main_quiz():
             elif mistake_count >= 3:
                 st.markdown("<p style='text-align: center; font-weight: bold; color: #e67e22;'>もう正解は目の前！自信を持って！</p>", unsafe_allow_html=True)
             
-        st.markdown(f"<h4 style='text-align: center;'>{q_data['q']}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='text-align: center; white-space: pre-wrap;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
         show_active_users_fragment(st.session_state.current_q)
         
@@ -230,7 +251,7 @@ def page_main_quiz():
             if st.button("解答する", type="primary", use_container_width=True, disabled=not user_choice):
                 if user_choice == q_data["ans"]:
                     st.session_state.wrong_choices = [] 
-                    if st.session_state.current_q < 5:
+                    if st.session_state.current_q < TOTAL_Q:
                         st.session_state.current_q += 1
                         active_users[st.session_state.username] = st.session_state.current_q
                     else:
@@ -253,17 +274,23 @@ def page_main_quiz():
         st.write("")
         st.divider()
         
-        progress_val = st.session_state.current_q / 5
+        # 進行状況バーの動的計算
+        progress_val = st.session_state.current_q / TOTAL_Q
         st.progress(progress_val)
         
-        messages = {
-            1: "さあ、始まりました！どんどん答えていこう！",
-            2: "いいペースです！その調子！",
-            3: "折り返し地点！落ち着いていこう！",
-            4: "あと1問！",
-            5: "泣いても笑っても最後の問題！"
-        }
-        st.markdown(f"<p style='text-align: center; color: gray;'>({st.session_state.current_q}/5) {messages[st.session_state.current_q]}</p>", unsafe_allow_html=True)
+        # 応援メッセージの動的出し分け
+        if st.session_state.current_q == 1:
+            msg = "さあ、始まりました！どんどん答えていこう！"
+        elif st.session_state.current_q == TOTAL_Q:
+            msg = "泣いても笑っても最後の問題！"
+        elif st.session_state.current_q == TOTAL_Q // 2:
+            msg = "折り返し地点！落ち着いていこう！"
+        elif st.session_state.current_q == TOTAL_Q - 1:
+            msg = "あと1問！"
+        else:
+            msg = "いいペースです！その調子！"
+
+        st.markdown(f"<p style='text-align: center; color: gray;'>({st.session_state.current_q}/{TOTAL_Q}) {msg}</p>", unsafe_allow_html=True)
 
     # --- 結果発表フェーズ ---
     elif st.session_state.phase == "result":
@@ -301,7 +328,6 @@ def page_main_quiz():
                 st.session_state.phase = "login"
                 st.session_state.username = ""
                 st.session_state.wrong_choices = []
-                # ここでquiz_dataをクリアする必要はありません。次回のスタート時に上書きされます。
                 st.rerun()
 
 # ------------------------------------------------
