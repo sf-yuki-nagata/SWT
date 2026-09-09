@@ -92,7 +92,7 @@ if "wrong_choices" not in st.session_state:
 if "quiz_data" not in st.session_state:
     st.session_state.quiz_data = []
 
-# --- 🌟Excelから抽出・整理したクイズデータ ---
+# --- Excelから抽出・整理したクイズデータ ---
 QUIZ_DATA = [
     {
         "q": "日本のコミュニティは？",
@@ -116,7 +116,7 @@ QUIZ_DATA = [
         "q": "企業がAIをビジネスに適用し、使いこなすためのプラットフォームとしてのSnowflakeのポジションを表すキーワードは？",
         "opts": ["AI Data Cloud", "Enterprise Lakehouse", "Data Cloud", "Cloud DWH"],
         "ans": "AI Data Cloud",
-        "hint": "組織が重要なデータとアプリケーションに接続し、コラボレーションを行ってイノベーションを推進するための『グローバルなネットワーク』として定義されています"
+        "hint": "特になし。自信を持って答えてね！"
     },
     {
         "q": "自然言語の指示からSQLやPythonコードを生成し、データエンジニアリングやアプリ開発のワークフローを支援するデータネイティブなAIコーディングエージェントの名称はどれですか？",
@@ -197,7 +197,7 @@ def page_main_quiz():
     elif st.session_state.phase == "quiz":
         q_idx = st.session_state.current_q - 1
         q_data = st.session_state.quiz_data[q_idx]
-        TOTAL_Q = len(st.session_state.quiz_data) # 問題数の動的取得
+        TOTAL_Q = len(st.session_state.quiz_data) 
 
         timer_html = f"""
         <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
@@ -226,11 +226,20 @@ def page_main_quiz():
             
         st.markdown(f"<h4 style='text-align: center; white-space: pre-wrap;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
+        # 🌟追加：特定の設問の場合のみ、画像を表示する
+        if "右下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
+            img_col1, img_col2, img_col3 = st.columns([1, 1, 1])
+            with img_col2:
+                if os.path.exists("image_c64ebb.png"):
+                    st.image("image_c64ebb.png", use_container_width=True)
+                else:
+                    st.warning("⚠️ `image_c64ebb.png` が見つかりません。")
+        
         show_active_users_fragment(st.session_state.current_q)
         
         st.divider()
 
-        with st.expander(f"💡 ヒントを見る"):
+        with st.expander(f"💡 ヒントを見る (第{st.session_state.current_q}問)"):
             st.write(q_data["hint"])
 
         st.write("")
@@ -274,11 +283,9 @@ def page_main_quiz():
         st.write("")
         st.divider()
         
-        # 進行状況バーの動的計算
         progress_val = st.session_state.current_q / TOTAL_Q
         st.progress(progress_val)
         
-        # 応援メッセージの動的出し分け
         if st.session_state.current_q == 1:
             msg = "さあ、始まりました！どんどん答えていこう！"
         elif st.session_state.current_q == TOTAL_Q:
