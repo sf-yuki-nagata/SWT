@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import base64
 import os
+import random  # 🌟追加: ランダム化のためのモジュール
 
 # --- カスタムデザインを適用するCSS ---
 def inject_custom_css():
@@ -14,7 +15,7 @@ def inject_custom_css():
     }
     .stRadio [role="radiogroup"] label {
         background-color: #29b5e8 !important; 
-        border-radius: 12px !important;       
+        border-radius: 12px !important;        
         padding: 15px !important;
         border: 3px solid #29b5e8 !important;
         cursor: pointer;
@@ -88,6 +89,9 @@ if "current_q" not in st.session_state:
     st.session_state.current_q = 1
 if "wrong_choices" not in st.session_state:
     st.session_state.wrong_choices = []
+# 🌟追加: シャッフルしたクイズデータを保持する変数
+if "quiz_data" not in st.session_state:
+    st.session_state.quiz_data = []
 
 QUIZ_DATA = [
     {
@@ -149,13 +153,30 @@ def page_main_quiz():
                 st.session_state.phase = "quiz"
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
+                
+                # 🌟追加・変更点: ここで問題をシャッフルし、セッションステートに保存する
+                shuffled_quiz = []
+                for q in QUIZ_DATA:
+                    q_copy = q.copy()
+                    # 選択肢もランダムにする（固定したい場合は下の2行を削除してください）
+                    opts_copy = q_copy["opts"].copy()
+                    random.shuffle(opts_copy)
+                    q_copy["opts"] = opts_copy
+                    shuffled_quiz.append(q_copy)
+                
+                random.shuffle(shuffled_quiz) # 設問自体の順番をランダムに
+                st.session_state.quiz_data = shuffled_quiz
+                # 🌟ここまで
+
                 active_users[username] = 1
                 st.rerun()
 
     # --- クイズ実行フェーズ ---
     elif st.session_state.phase == "quiz":
         q_idx = st.session_state.current_q - 1
-        q_data = QUIZ_DATA[q_idx]
+        
+        # 🌟変更点: グローバルのQUIZ_DATAではなく、シャッフル済みのquiz_dataを使う
+        q_data = st.session_state.quiz_data[q_idx]
 
         timer_html = f"""
         <div style="text-align: right; font-size: 1.2rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
@@ -280,6 +301,7 @@ def page_main_quiz():
                 st.session_state.phase = "login"
                 st.session_state.username = ""
                 st.session_state.wrong_choices = []
+                # ここでquiz_dataをクリアする必要はありません。次回のスタート時に上書きされます。
                 st.rerun()
 
 # ------------------------------------------------
