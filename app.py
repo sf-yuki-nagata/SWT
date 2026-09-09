@@ -170,7 +170,8 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitでクイズチャレンジ</h3>", unsafe_allow_html=True)
+        # 🌟変更: 「クイズ」の前で綺麗に改行されるように <br> を追加
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
         col1, col2, col3 = st.columns([1, 5, 1])
@@ -384,7 +385,6 @@ def page_ranking():
     
     st.write("")
     
-    # 🌟変更: パスワードによるリセット機能
     with st.expander("⚙️ 管理者用メニュー"):
         st.write("※ランキングのデータを空にするにはパスワードを入力してください")
         admin_pw = st.text_input("パスワード", type="password", key="admin_pw")
@@ -393,7 +393,7 @@ def page_ranking():
             if admin_pw == "streamlit":
                 global_rankings.clear()
                 st.success("ランキングをリセットしました！")
-                time.sleep(1) # メッセージを見せるための小休止
+                time.sleep(1) 
                 st.rerun()
             else:
                 st.error("パスワードが違います。")
