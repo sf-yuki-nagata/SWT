@@ -14,6 +14,12 @@ def inject_custom_css():
         font-size: 14px !important;
     }
     
+    /* 🌟追加: 画面全体を上に引き上げる（メインコンテンツの上部余白を削る） */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
     /* 1. ラジオボタンをSnowflakeブルーの角丸ボタン化 */
     .stRadio [role="radiogroup"] {
         gap: 10px;
@@ -291,7 +297,6 @@ def page_main_quiz():
                 
                 st.rerun()
 
-        # 🌟変更：余分な余白（st.write）と st.divider を削除し、細い余白の横線に置換
         st.markdown("<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #e6e6e6;'>", unsafe_allow_html=True)
         
         progress_val = st.session_state.current_q / TOTAL_Q
