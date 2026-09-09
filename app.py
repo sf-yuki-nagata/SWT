@@ -230,7 +230,7 @@ def page_main_quiz():
         
         st.divider()
 
-        with st.expander(f"💡 ヒントを見る (第{st.session_state.current_q}問)"):
+        with st.expander(f"💡 ヒントを見る"):
             st.write(q_data["hint"])
 
         st.write("")
