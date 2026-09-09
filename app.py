@@ -322,7 +322,6 @@ def page_main_quiz():
         
         st.divider()
         
-        # 🌟追加・変更：「もっとコミュニティを楽しもう！」の下に「Let's go see SnowVillage!!!」を追加
         st.markdown("<p style='text-align: center; font-size: 1.0rem; font-weight: bold; margin-bottom: 5px;'>もっとコミュニティを楽しもう！</p>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; font-size: 1.1rem; font-weight: bold; color: #29b5e8;'>Let's go see SnowVillage!!!</p>", unsafe_allow_html=True)
         
@@ -351,7 +350,6 @@ def page_main_quiz():
                 st.session_state.wrong_choices = []
                 st.rerun()
             
-            # 🌟追加：「ランキングを見よう！」ボタンを追加し、クリックでランキングページへ遷移
             st.write("")
             if st.button("ランキングを見よう！", icon="🏆", use_container_width=True):
                 st.switch_page(ranking_page)
@@ -386,11 +384,19 @@ def page_ranking():
     
     st.write("")
     
+    # 🌟変更: パスワードによるリセット機能
     with st.expander("⚙️ 管理者用メニュー"):
-        st.write("※ランキングのデータを空にします")
+        st.write("※ランキングのデータを空にするにはパスワードを入力してください")
+        admin_pw = st.text_input("パスワード", type="password", key="admin_pw")
+        
         if st.button("🗑️ ランキングをリセットする", use_container_width=True):
-            global_rankings.clear()
-            st.rerun()
+            if admin_pw == "streamlit":
+                global_rankings.clear()
+                st.success("ランキングをリセットしました！")
+                time.sleep(1) # メッセージを見せるための小休止
+                st.rerun()
+            else:
+                st.error("パスワードが違います。")
 
 # ------------------------------------------------
 # ナビゲーションの構築（常時表示）
