@@ -14,7 +14,7 @@ def inject_custom_css():
         font-size: 14px !important;
     }
     
-    /* 🌟追加: 画面全体を上に引き上げる（メインコンテンツの上部余白を削る） */
+    /* 画面全体を上に引き上げる（メインコンテンツの上部余白を削る） */
     .block-container {
         padding-top: 2rem !important;
         padding-bottom: 1rem !important;
@@ -78,7 +78,8 @@ def get_global_rankings():
 def show_active_users_fragment(current_q):
     active_users = get_active_users()
     same_q_users = sum(1 for q in active_users.values() if q == current_q)
-    st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold; font-size: 0.9rem;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
+    # 🌟変更：margin-bottom: 0px; を追加して、テキストの下の余白を消去
+    st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold; font-size: 0.9rem; margin-bottom: 0px;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
 
 # ------------------------------------------------
 # 初期設定とステート管理
@@ -255,7 +256,8 @@ def page_main_quiz():
         
         show_active_users_fragment(st.session_state.current_q)
         
-        st.divider()
+        # 🌟変更：st.divider() を削除し、余白を細かく調整した横線に変更
+        st.markdown("<hr style='margin: 10px 0px 15px 0px; border-top: 1px solid #e6e6e6;'>", unsafe_allow_html=True)
 
         with st.expander(f"💡 ヒントを見る"):
             st.write(q_data["hint"])
