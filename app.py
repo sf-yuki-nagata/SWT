@@ -67,7 +67,6 @@ def get_active_users():
     return {}
 
 # --- 全ユーザーでランキングを共有するためのグローバルリスト ---
-# ※ Git等でアプリが再デプロイ（再起動）されると自動的にリセットされます
 @st.cache_resource
 def get_global_rankings():
     return []
@@ -78,7 +77,6 @@ def get_global_rankings():
 @st.fragment(run_every=3)
 def show_active_users_fragment(current_q):
     active_users = get_active_users()
-    # 現在同じ設問番号にいる人数を集計
     same_q_users = sum(1 for q in active_users.values() if q == current_q)
     st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold; font-size: 0.9rem; margin-bottom: 0px;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
 
@@ -105,7 +103,7 @@ if "wrong_choices" not in st.session_state:
 if "quiz_data" not in st.session_state:
     st.session_state.quiz_data = []
 
-# --- Excelから抽出・整理したクイズデータ（プール） ---
+# --- Excelから抽出・整理したクイズデータ ---
 QUIZ_DATA = [
     {
         "q": "日本のコミュニティは？",
@@ -191,8 +189,7 @@ def page_main_quiz():
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
                 
-                # 🌟変更：1〜4問目をランダム抽出、5問目を固定にするロジック
-                pool = []
+                shuffled_quiz = []
                 last_q_data = None
                 
                 for q in QUIZ_DATA:
@@ -204,13 +201,11 @@ def page_main_quiz():
                     if q_copy["q"] == "日本のコミュニティは？":
                         last_q_data = q_copy
                     else:
-                        pool.append(q_copy)
+                        shuffled_quiz.append(q_copy)
                 
-                # プールの中からランダムに4問抽出
-                random.shuffle(pool)
-                shuffled_quiz = pool[:4]
+                random.shuffle(shuffled_quiz)
+                shuffled_quiz = shuffled_quiz[:4]
                 
-                # 5問目として固定問題を追加
                 if last_q_data:
                     shuffled_quiz.append(last_q_data)
                     
@@ -223,7 +218,7 @@ def page_main_quiz():
     elif st.session_state.phase == "quiz":
         q_idx = st.session_state.current_q - 1
         q_data = st.session_state.quiz_data[q_idx]
-        TOTAL_Q = len(st.session_state.quiz_data) # 常に5問になります
+        TOTAL_Q = len(st.session_state.quiz_data) 
 
         timer_html = f"""
         <div style="text-align: right; font-size: 1.0rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
@@ -359,8 +354,9 @@ def page_main_quiz():
 # ページ2: いつでも見れるランキング画面
 # ------------------------------------------------
 def page_ranking():
-    st.title("🏆 回答最速王")
-    st.write("現在の回答王番付はこちら🥇")
+    # 🌟変更: st.titleからh3タグに変更し、1行に収めて中央揃えに
+    st.markdown("<h3 style='text-align: center;'>🏆 回答最速王</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>現在の回答王番付はこちら🥇</p>", unsafe_allow_html=True)
     
     if st.session_state.phase == "quiz":
         st.info("💡 現在クイズに挑戦中です！左のメニューから「クイズ」に戻ると、続きから再開できます。")
@@ -369,20 +365,28 @@ def page_ranking():
     
     if not global_rankings:
         st.write("まだ参加者がいません。あなたが最初のチャレンジャーになりましょう！")
-        return
-
-    sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
-    df = pd.DataFrame(sorted_ranking)
-    df.index = [f"{i+1}位" for i in range(len(df))]
+    else:
+        sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
+        df = pd.DataFrame(sorted_ranking)
+        df.index = [f"{i+1}位" for i in range(len(df))]
+        
+        st.dataframe(
+            df, 
+            use_container_width=True,
+            column_config={
+                "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
+                "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
+            }
+        )
     
-    st.dataframe(
-        df, 
-        use_container_width=True,
-        column_config={
-            "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
-            "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
-        }
-    )
+    st.write("")
+    
+    # 🌟追加: 手動で確実にリセットするための管理者用メニュー
+    with st.expander("⚙️ 管理者用メニュー"):
+        st.write("※ランキングのデータを空にします")
+        if st.button("🗑️ ランキングをリセットする", use_container_width=True):
+            global_rankings.clear() # キャッシュされているリストの中身を空にする
+            st.rerun()
 
 # ------------------------------------------------
 # ナビゲーションの構築（常時表示）
