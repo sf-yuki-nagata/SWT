@@ -178,16 +178,28 @@ def page_main_quiz():
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
                 
-                # 問題と選択肢をシャッフル
+                # 問題と選択肢のシャッフル処理（最終問題を固定）
                 shuffled_quiz = []
+                last_q_data = None
+                
                 for q in QUIZ_DATA:
                     q_copy = q.copy()
                     opts_copy = q_copy["opts"].copy()
                     random.shuffle(opts_copy)
                     q_copy["opts"] = opts_copy
-                    shuffled_quiz.append(q_copy)
+                    
+                    if q_copy["q"] == "日本のコミュニティは？":
+                        last_q_data = q_copy
+                    else:
+                        shuffled_quiz.append(q_copy)
                 
+                # 最終問題以外をシャッフル
                 random.shuffle(shuffled_quiz)
+                
+                # 最後に固定の問題を追加
+                if last_q_data:
+                    shuffled_quiz.append(last_q_data)
+                    
                 st.session_state.quiz_data = shuffled_quiz
 
                 active_users[username] = 1
@@ -226,11 +238,9 @@ def page_main_quiz():
             
         st.markdown(f"<h4 style='text-align: center; white-space: pre-wrap;'>{q_data['q']}</h4>", unsafe_allow_html=True)
         
-        # 🌟変更：HTMLで直接サイズ指定（width="80"）してアイコンサイズで中央表示
         if "下のマーク（アイコン）が意味するSnowflakeの機能はどれですか？" in q_data['q']:
             img_b64 = get_image_base64("image_c64ebb.png")
             if img_b64:
-                # 横幅を80pxにして文字と同等のサイズ感にする
                 st.markdown(f'<div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" width="80"></div>', unsafe_allow_html=True)
             else:
                 st.warning("⚠️ `image_c64ebb.png` が見つかりません。")
@@ -301,7 +311,8 @@ def page_main_quiz():
 
     # --- 結果発表フェーズ ---
     elif st.session_state.phase == "result":
-        st.balloons()
+        # 🌟変更：balloons()からsnow()に変更
+        st.snow()
         st.markdown("<h2 style='text-align: center; color: #29b5e8;'>🎉 NICE CHALLENGE！！</h2>", unsafe_allow_html=True)
         
         st.markdown(f"<h4 style='text-align: center; line-height: 1.6;'>{st.session_state.username}さん、<br>参加してくれてありがとうございます！</h4>", unsafe_allow_html=True)
