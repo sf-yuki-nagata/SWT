@@ -67,6 +67,7 @@ def get_active_users():
     return {}
 
 # --- 全ユーザーでランキングを共有するためのグローバルリスト ---
+# ※ Git等でアプリが再デプロイ（再起動）されると自動的にリセットされます
 @st.cache_resource
 def get_global_rankings():
     return []
@@ -77,8 +78,8 @@ def get_global_rankings():
 @st.fragment(run_every=3)
 def show_active_users_fragment(current_q):
     active_users = get_active_users()
+    # 現在同じ設問番号にいる人数を集計
     same_q_users = sum(1 for q in active_users.values() if q == current_q)
-    # 🌟変更：margin-bottom: 0px; を追加して、テキストの下の余白を消去
     st.markdown(f"<p style='text-align: center; color: #ff4b4b; font-weight: bold; font-size: 0.9rem; margin-bottom: 0px;'>🔥 現在 {same_q_users} 人がこの問題に挑戦中！</p>", unsafe_allow_html=True)
 
 # ------------------------------------------------
@@ -104,7 +105,7 @@ if "wrong_choices" not in st.session_state:
 if "quiz_data" not in st.session_state:
     st.session_state.quiz_data = []
 
-# --- Excelから抽出・整理したクイズデータ ---
+# --- Excelから抽出・整理したクイズデータ（プール） ---
 QUIZ_DATA = [
     {
         "q": "日本のコミュニティは？",
@@ -190,7 +191,8 @@ def page_main_quiz():
                 st.session_state.current_q = 1
                 st.session_state.wrong_choices = []
                 
-                shuffled_quiz = []
+                # 🌟変更：1〜4問目をランダム抽出、5問目を固定にするロジック
+                pool = []
                 last_q_data = None
                 
                 for q in QUIZ_DATA:
@@ -202,10 +204,13 @@ def page_main_quiz():
                     if q_copy["q"] == "日本のコミュニティは？":
                         last_q_data = q_copy
                     else:
-                        shuffled_quiz.append(q_copy)
+                        pool.append(q_copy)
                 
-                random.shuffle(shuffled_quiz)
+                # プールの中からランダムに4問抽出
+                random.shuffle(pool)
+                shuffled_quiz = pool[:4]
                 
+                # 5問目として固定問題を追加
                 if last_q_data:
                     shuffled_quiz.append(last_q_data)
                     
@@ -218,7 +223,7 @@ def page_main_quiz():
     elif st.session_state.phase == "quiz":
         q_idx = st.session_state.current_q - 1
         q_data = st.session_state.quiz_data[q_idx]
-        TOTAL_Q = len(st.session_state.quiz_data) 
+        TOTAL_Q = len(st.session_state.quiz_data) # 常に5問になります
 
         timer_html = f"""
         <div style="text-align: right; font-size: 1.0rem; font-weight: bold; color: #29b5e8; margin-bottom: -40px;" id="live-timer">⏱️ 0.00秒</div>
@@ -256,13 +261,10 @@ def page_main_quiz():
         
         show_active_users_fragment(st.session_state.current_q)
         
-        # 🌟変更：st.divider() を削除し、余白を細かく調整した横線に変更
         st.markdown("<hr style='margin: 10px 0px 15px 0px; border-top: 1px solid #e6e6e6;'>", unsafe_allow_html=True)
 
         with st.expander(f"💡 ヒントを見る"):
             st.write(q_data["hint"])
-
-        st.write("")
 
         available_opts = [opt for opt in q_data["opts"] if opt not in st.session_state.wrong_choices]
         
@@ -272,8 +274,6 @@ def page_main_quiz():
             index=None, 
             label_visibility="collapsed"
         )
-
-        st.write("")
         
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
