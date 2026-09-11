@@ -54,7 +54,7 @@ def inject_custom_css():
 
     /* 🌟追加：ランキング表（st.table）の文字サイズを約4ポイント大きくする */
     [data-testid="stTable"] {
-        font-size: 25px !important; /* 14px + 4px */
+        font-size: 30px !important; /* 14px + 4px */
     }
     [data-testid="stTable"] th {
         font-size: 16px !important;
