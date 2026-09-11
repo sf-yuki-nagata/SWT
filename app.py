@@ -86,16 +86,16 @@ def admin_dashboard_content():
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        # 🌟変更: h4 から h3 に変更し文字サイズを大きくしました
-        st.markdown("<h3 style='text-align: center; color: #555;'>📱 クイズに参加する</h3>", unsafe_allow_html=True)
+        # 🌟変更: 管理画面の見出しを h3 -> h2 に変更し、さらに大きく
+        st.markdown("<h2 style='text-align: center; color: #555;'>📱 クイズに参加する</h2>", unsafe_allow_html=True)
         if os.path.exists("QR.png"):
             st.image("QR.png", use_container_width=True)
         else:
             st.warning("⚠️ `QR.png` が見つかりません。")
             
     with col2:
-        # 🌟変更: h4 から h3 に変更し文字サイズを大きくしました
-        st.markdown("<h3 style='text-align: center; color: #555;'>🏆 リアルタイムランキング</h3>", unsafe_allow_html=True)
+        # 🌟変更: 管理画面の見出しを h3 -> h2 に変更し、さらに大きく
+        st.markdown("<h2 style='text-align: center; color: #555;'>🏆 リアルタイムランキング</h2>", unsafe_allow_html=True)
         global_rankings = get_global_rankings()
         
         if not global_rankings:
@@ -207,6 +207,7 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
+        # 🌟変更: ログイン画面のタイトルを元の1行サイズ(h3・br入り)に戻しました
         st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
