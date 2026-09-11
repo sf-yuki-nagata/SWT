@@ -52,16 +52,16 @@ def inject_custom_css():
         border: 2px solid #29b5e8 !important;
     }
 
-    /* 🌟追加：ランキング表（st.table）の文字サイズを約4ポイント大きくする */
+    /* 🌟変更：ランキング表（st.table）の文字サイズをさらに5ポイント（23px）に拡大 */
     [data-testid="stTable"] {
-        font-size: 30px !important; /* 14px + 4px */
+        font-size: 23px !important; 
     }
     [data-testid="stTable"] th {
-        font-size: 16px !important;
+        font-size: 20px !important;
         color: #555 !important;
     }
     [data-testid="stTable"] td {
-        font-size: 18px !important;
+        font-size: 23px !important;
         font-weight: bold !important;
         vertical-align: middle !important;
     }
@@ -114,7 +114,6 @@ def admin_dashboard_content():
             st.info("まだ参加者がいません。")
         else:
             sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
-            # 🌟変更：st.dataframe から st.table に変更し、フォーマットを自前で行う
             formatted_ranking = [
                 {"プレイヤー名": r["プレイヤー名"], "クリアタイム": f"{r['クリアタイム']:.2f} 秒"}
                 for r in sorted_ranking
@@ -216,7 +215,7 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
         col1, col2, col3 = st.columns([1, 5, 1])
@@ -416,7 +415,6 @@ def page_ranking():
         st.write("まだ参加者がいません。あなたが最初のチャレンジャーになりましょう！")
     else:
         sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
-        # 🌟変更：st.dataframe から st.table に変更し、フォーマットを自前で行う
         formatted_ranking = [
             {"プレイヤー名": r["プレイヤー名"], "クリアタイム": f"{r['クリアタイム']:.2f} 秒"}
             for r in sorted_ranking
