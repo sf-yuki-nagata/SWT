@@ -208,7 +208,7 @@ def page_main_quiz():
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
         # 🌟変更: ログイン画面のタイトルを元の1行サイズ(h3・br入り)に戻しました
-        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
         col1, col2, col3 = st.columns([1, 5, 1])
