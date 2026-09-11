@@ -192,7 +192,7 @@ QUIZ_DATA = [
         "q": "Streamlitでのアプリ開発を学べるクリスマス企画「○○days of Streamlit」は何日で完結するコンテンツでしょうか？",
         "opts": ["30 days", "25 days", "24 days", "365 days"],
         "ans": "25 days",
-        "hint": "クリスマスまでにstreamlitを覚えらるってことはクリスマスは12月何日？"
+        "hint": "クリスマスまでにstreamlitを覚えられるってことはクリスマスは12月何日？"
     }
 ]
 
