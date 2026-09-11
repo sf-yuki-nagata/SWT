@@ -51,6 +51,20 @@ def inject_custom_css():
         background-color: #ffffff !important;
         border: 2px solid #29b5e8 !important;
     }
+
+    /* 🌟追加：ランキング表（st.table）の文字サイズを約4ポイント大きくする */
+    [data-testid="stTable"] {
+        font-size: 18px !important; /* 14px + 4px */
+    }
+    [data-testid="stTable"] th {
+        font-size: 16px !important;
+        color: #555 !important;
+    }
+    [data-testid="stTable"] td {
+        font-size: 18px !important;
+        font-weight: bold !important;
+        vertical-align: middle !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -86,7 +100,6 @@ def admin_dashboard_content():
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        # 🌟変更: 管理画面の見出しを h3 -> h2 に変更し、さらに大きく
         st.markdown("<h2 style='text-align: center; color: #555;'>📱 クイズに参加する</h2>", unsafe_allow_html=True)
         if os.path.exists("QR.png"):
             st.image("QR.png", use_container_width=True)
@@ -94,7 +107,6 @@ def admin_dashboard_content():
             st.warning("⚠️ `QR.png` が見つかりません。")
             
     with col2:
-        # 🌟変更: 管理画面の見出しを h3 -> h2 に変更し、さらに大きく
         st.markdown("<h2 style='text-align: center; color: #555;'>🏆 リアルタイムランキング</h2>", unsafe_allow_html=True)
         global_rankings = get_global_rankings()
         
@@ -102,18 +114,15 @@ def admin_dashboard_content():
             st.info("まだ参加者がいません。")
         else:
             sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
-            df = pd.DataFrame(sorted_ranking)
+            # 🌟変更：st.dataframe から st.table に変更し、フォーマットを自前で行う
+            formatted_ranking = [
+                {"プレイヤー名": r["プレイヤー名"], "クリアタイム": f"{r['クリアタイム']:.2f} 秒"}
+                for r in sorted_ranking
+            ]
+            df = pd.DataFrame(formatted_ranking)
             df.index = [f"{i+1}位" for i in range(len(df))]
             
-            st.dataframe(
-                df, 
-                use_container_width=True,
-                column_config={
-                    "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
-                    "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
-                },
-                height=400 # ランキング表の高さをある程度確保
-            )
+            st.table(df)
 
 # ------------------------------------------------
 # 初期設定とステート管理
@@ -207,8 +216,7 @@ def page_main_quiz():
 
     # --- ログインフェーズ ---
     if st.session_state.phase == "login":
-        # 🌟変更: ログイン画面のタイトルを元の1行サイズ(h3・br入り)に戻しました
-        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #29b5e8;'>❄️ Streamlitで<br>クイズチャレンジ</h3>", unsafe_allow_html=True)
         st.write("")
         
         col1, col2, col3 = st.columns([1, 5, 1])
@@ -408,17 +416,15 @@ def page_ranking():
         st.write("まだ参加者がいません。あなたが最初のチャレンジャーになりましょう！")
     else:
         sorted_ranking = sorted(global_rankings, key=lambda x: x["クリアタイム"])
-        df = pd.DataFrame(sorted_ranking)
+        # 🌟変更：st.dataframe から st.table に変更し、フォーマットを自前で行う
+        formatted_ranking = [
+            {"プレイヤー名": r["プレイヤー名"], "クリアタイム": f"{r['クリアタイム']:.2f} 秒"}
+            for r in sorted_ranking
+        ]
+        df = pd.DataFrame(formatted_ranking)
         df.index = [f"{i+1}位" for i in range(len(df))]
         
-        st.dataframe(
-            df, 
-            use_container_width=True,
-            column_config={
-                "プレイヤー名": st.column_config.TextColumn("プレイヤー名", max_chars=50),
-                "クリアタイム": st.column_config.NumberColumn("クリアタイム (秒)", format="%.2f 秒")
-            }
-        )
+        st.table(df)
 
 # ------------------------------------------------
 # ページ3: 管理者画面（ダッシュボード＆リセット）
